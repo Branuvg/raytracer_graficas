@@ -86,7 +86,7 @@ fn main() {
         framebuffer.clear();
 
         // 1.1 process events y chequea la colisión
-        // Le pasamos el laberinto y el tamaño del bloque.
+        // Le pasamos el laberinto y el tamaño del bloque
         let game_over = process_events(&window, &mut player, &maze, block_size);
         
         // Si la función devuelve 'true', rompemos el bucle.
