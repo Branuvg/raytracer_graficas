@@ -1,13 +1,10 @@
 // ray_intersect.rs
 use raylib::prelude::{Color, Vector3};
-
-#[derive(Debug, Clone, Copy)]
-pub struct Material {
-    pub diffuse: Color,
-}
+use crate::material::Material;
 
 #[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
+
 pub struct Intersect {
     pub material: Material,
     pub distance: f32,
@@ -26,7 +23,8 @@ impl Intersect {
     pub fn empty() -> Self {
         Intersect {
             material: Material {
-                diffuse: Color::new(0, 0, 0, 0),
+                diffuse: Vector3::zero(),
+                albedo: [0.0],
             },
             distance: 0.0,
             is_intersecting: false,

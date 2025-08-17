@@ -9,11 +9,13 @@ mod framebuffer;
 mod ray_intersect;
 mod sphere;
 mod camera;
+mod material;
 
 use framebuffer::Framebuffer;
-use ray_intersect::{RayIntersect, Intersect, Material};
+use ray_intersect::{RayIntersect, Intersect};
 use sphere::Sphere;
 use camera::Camera;
+use material::{Material, vector3_to_color};
 
 pub fn cast_ray(
     ray_origin: &Vector3,
@@ -37,7 +39,8 @@ pub fn cast_ray(
         return Color::new(4, 12, 36, 255);
     }
 
-    intersect.material.diffuse
+    let color = intersect.material.diffuse;
+    vector3_to_color(color)
 }
 
 pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera) {
@@ -80,11 +83,13 @@ fn main() {
     let mut framebuffer = Framebuffer::new(window_width as i32, window_height as i32);
 
     let rubber = Material {
-        diffuse: Color::new(80, 0, 0, 255),
+        diffuse: Vector3::new(0.3, 0.1, 0.1),
+        albedo: [0.9]
     };
 
     let ivory = Material {
-        diffuse: Color::new(100, 100, 80, 255),
+        diffuse: Vector3::new(0.4, 0.4, 0.3),
+        albedo: [0.6]
     };
 
     let objects = [

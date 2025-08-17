@@ -1,6 +1,7 @@
 // sphere.rs
 use raylib::prelude::*;
-use crate::ray_intersect::{RayIntersect, Intersect, Material};
+use crate::ray_intersect::{RayIntersect, Intersect};
+use crate::material::Material;
 
 pub struct Sphere {
     pub center: Vector3,
