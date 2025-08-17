@@ -88,16 +88,16 @@ fn main() {
     };
 
     let objects = [
-        // Sphere {
-        //     center: Vector3::new(1.0, 0.0, -4.0),
-        //     radius: 1.0,
-        //     material: ivory,
-        // },
-        // Sphere {
-        //     center: Vector3::new(2.0, 0.0, -5.0),
-        //     radius: 1.0,
-        //     material: rubber,
-        // },
+        Sphere {
+            center: Vector3::new(1.0, 0.0, -4.0),
+            radius: 1.0,
+            material: ivory,
+        },
+        Sphere {
+            center: Vector3::new(2.0, 0.0, -5.0),
+            radius: 1.0,
+            material: rubber,
+        },
         Sphere {
             center: Vector3::new(0.0, 0.0, 0.0),
             radius: 1.0,
@@ -106,13 +106,28 @@ fn main() {
     ];
 
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 5.0),
-        Vector3::new(0.0, 0.0, 0.0),
-        Vector3::new(0.0, 1.0, 0.0),
+        Vector3::new(0.0, 0.0, 10.0),  // eye
+        Vector3::new(0.0, 0.0, 0.0),  // center
+        Vector3::new(0.0, 1.0, 0.0),  // up
     );
+    let rotation_speed = PI / 100.0;
 
     while !window.window_should_close() {
         framebuffer.clear();
+
+        // camera controls
+        if window.is_key_down(KeyboardKey::KEY_LEFT) {
+            camera.orbit(rotation_speed, 0.0);
+        }
+        if window.is_key_down(KeyboardKey::KEY_RIGHT) {
+            camera.orbit(-rotation_speed, 0.0);
+        }
+        if window.is_key_down(KeyboardKey::KEY_UP) {
+            camera.orbit(0.0, -rotation_speed);
+        }
+        if window.is_key_down(KeyboardKey::KEY_DOWN) {
+            camera.orbit(0.0, rotation_speed);
+        }
 
         render(&mut framebuffer, &objects, &camera);
 
