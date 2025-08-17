@@ -23,6 +23,23 @@ fn reflect(incident: &Vector3, normal: &Vector3) -> Vector3 {
     *incident - *normal * 2.0 * incident.dot(*normal)
 }
 
+fn cast_shadow(
+    intersect: &Intersect,
+    light: &Light,
+    objects: &[Sphere],
+) -> f32 {
+    let light_direction = (light.position - intersect.point).normalized();
+    let shadow_ray_origin = intersect.point;
+
+    for object in objects {
+        let shadow_intersect = object.ray_intersect(&shadow_ray_origin, &light_direction);
+        if shadow_intersect.is_intersecting {
+            return 0.8; //cambiar esto a una proporcion de la distancia para que haga el sh
+        }
+    }
+    0.0
+}
+
 pub fn cast_ray(
     ray_origin: &Vector3,
     ray_direction: &Vector3,
@@ -49,13 +66,16 @@ pub fn cast_ray(
     let light_direction = (light.position - intersect.point).normalized();
     let view_direction = (*ray_origin - intersect.point).normalized();
     let reflection_direction = reflect(&-light_direction, &-intersect.normal).normalized();
+
+    let shadow_intensity = cast_shadow(&intersect, light, objects);
+    let light_intensity = light.intensity * (1.0 - shadow_intensity);
     
     // Difuso
-    let diffuse_intensity = intersect.normal.dot(light_direction).max(0.0) * light.intensity;
+    let diffuse_intensity = intersect.normal.dot(light_direction).max(0.0) * light_intensity;
     let diffuse = intersect.material.diffuse * diffuse_intensity;
     
     // Especular
-    let specular_intensity = view_direction.dot(reflection_direction).max(0.0).powf(intersect.material.specular) * light.intensity;
+    let specular_intensity = view_direction.dot(reflection_direction).max(0.0).powf(intersect.material.specular) * light_intensity;
     let specular = light.color * specular_intensity;
     
     // Color final
@@ -123,19 +143,19 @@ fn main() {
             material: ivory,
         },
         Sphere {
-            center: Vector3::new(2.0, 0.0, -5.0),
+            center: Vector3::new(0.0, 0.0, 0.0),
             radius: 1.0,
             material: rubber,
         },
         Sphere {
-            center: Vector3::new(0.0, 0.0, 0.0),
-            radius: 1.0,
+            center: Vector3::new(1.0, 1.0, 1.0),
+            radius: 0.5,
             material: rubber,
         },
     ];
 
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 10.0),  // eye
+        Vector3::new(0.0, 0.0, 5.0),  // eye
         Vector3::new(0.0, 0.0, 0.0),  // center
         Vector3::new(0.0, 1.0, 0.0),  // up
     );
