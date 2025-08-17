@@ -1,3 +1,4 @@
+// main.rs
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
@@ -7,10 +8,12 @@ use std::f32::consts::PI;
 mod framebuffer;
 mod ray_intersect;
 mod sphere;
+mod camera;
 
 use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect, Material};
 use sphere::Sphere;
+use camera::Camera;
 
 pub fn cast_ray(
     ray_origin: &Vector3,
@@ -37,26 +40,26 @@ pub fn cast_ray(
     intersect.material.diffuse
 }
 
-pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere]) {
+pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera) {
     let width = framebuffer.width as f32;
     let height = framebuffer.height as f32;
     let aspect_ratio = width / height;
     let fov = PI / 3.0;
     let perspective_scale = (fov * 0.5).tan();
 
-    // Los bucles ahora usan i32, que es el tipo de framebuffer.width/height
     for y in 0..framebuffer.height {
         for x in 0..framebuffer.width {
-            let screen_x = (2.0 * (x as f32 + 0.5)) / width - 1.0;
-            let screen_y = -(2.0 * (y as f32 + 0.5)) / height + 1.0;
+            let screen_x = (2.0 * x as f32) / width - 1.0;
+            let screen_y = -(2.0 * y as f32) / height + 1.0;
 
-            let camera_x = screen_x * aspect_ratio * perspective_scale;
-            let camera_y = screen_y * perspective_scale;
+            let screen_x = screen_x * aspect_ratio * perspective_scale;
+            let screen_y = screen_y * perspective_scale;
 
-            let ray_direction = Vector3::new(camera_x, camera_y, -1.0).normalized();
-            let ray_origin = Vector3::new(0.0, 0.0, 0.0);
+            let ray_direction = Vector3::new(screen_x, screen_y, -1.0).normalized();
 
-            let pixel_color = cast_ray(&ray_origin, &ray_direction, objects);
+            let rotated_direction = camera.basis_change(&ray_direction);
+
+            let pixel_color = cast_ray(&camera.eye, &rotated_direction, objects);
 
             framebuffer.set_current_color(pixel_color);
             framebuffer.set_pixel(x, y);
@@ -85,22 +88,33 @@ fn main() {
     };
 
     let objects = [
+        // Sphere {
+        //     center: Vector3::new(1.0, 0.0, -4.0),
+        //     radius: 1.0,
+        //     material: ivory,
+        // },
+        // Sphere {
+        //     center: Vector3::new(2.0, 0.0, -5.0),
+        //     radius: 1.0,
+        //     material: rubber,
+        // },
         Sphere {
-            center: Vector3::new(1.0, 0.0, -4.0),
-            radius: 1.0,
-            material: ivory,
-        },
-        Sphere {
-            center: Vector3::new(2.0, 0.0, -5.0),
+            center: Vector3::new(0.0, 0.0, 0.0),
             radius: 1.0,
             material: rubber,
         },
     ];
 
+    let mut camera = Camera::new(
+        Vector3::new(0.0, 0.0, 5.0),
+        Vector3::new(0.0, 0.0, 0.0),
+        Vector3::new(0.0, 1.0, 0.0),
+    );
+
     while !window.window_should_close() {
         framebuffer.clear();
 
-        render(&mut framebuffer, &objects);
+        render(&mut framebuffer, &objects, &camera);
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
     }
