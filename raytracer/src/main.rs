@@ -10,17 +10,24 @@ mod ray_intersect;
 mod sphere;
 mod camera;
 mod material;
+mod light; 
 
 use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect};
 use sphere::Sphere;
 use camera::Camera;
 use material::{Material, vector3_to_color};
+use light::Light;
+
+fn reflect(incident: &Vector3, normal: &Vector3) -> Vector3 {
+    *incident - *normal * 2.0 * incident.dot(*normal)
+}
 
 pub fn cast_ray(
     ray_origin: &Vector3,
     ray_direction: &Vector3,
     objects: &[Sphere],
+    light: &Light,
 ) -> Color {
     let mut intersect = Intersect::empty();
     let mut zbuffer = f32::INFINITY;
@@ -38,12 +45,27 @@ pub fn cast_ray(
     if !intersect.is_intersecting {
         return Color::new(4, 12, 36, 255);
     }
+    
+    let light_direction = (light.position - intersect.point).normalized();
+    let view_direction = (*ray_origin - intersect.point).normalized();
+    let reflection_direction = reflect(&-light_direction, &-intersect.normal).normalized();
+    
+    // Difuso
+    let diffuse_intensity = intersect.normal.dot(light_direction).max(0.0) * light.intensity;
+    let diffuse = intersect.material.diffuse * diffuse_intensity;
+    
+    // Especular
+    let specular_intensity = view_direction.dot(reflection_direction).max(0.0).powf(intersect.material.specular) * light.intensity;
+    let specular = light.color * specular_intensity;
+    
+    // Color final
+    let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1]; // [diffuse,specular] * albedo (su energia)
 
-    let color = intersect.material.diffuse;
     vector3_to_color(color)
 }
 
-pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera) {
+pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera, light: &Light) {
+
     let width = framebuffer.width as f32;
     let height = framebuffer.height as f32;
     let aspect_ratio = width / height;
@@ -62,7 +84,7 @@ pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera
 
             let rotated_direction = camera.basis_change(&ray_direction);
 
-            let pixel_color = cast_ray(&camera.eye, &rotated_direction, objects);
+            let pixel_color = cast_ray(&camera.eye, &rotated_direction, objects, light);
 
             framebuffer.set_current_color(pixel_color);
             framebuffer.set_pixel(x, y);
@@ -84,12 +106,14 @@ fn main() {
 
     let rubber = Material {
         diffuse: Vector3::new(0.3, 0.1, 0.1),
-        albedo: [0.9]
+        albedo: [0.9,0.1],
+        specular: 5.0,
     };
 
     let ivory = Material {
         diffuse: Vector3::new(0.4, 0.4, 0.3),
-        albedo: [0.6]
+        albedo: [0.6,0.3],
+        specular: 50.0,
     };
 
     let objects = [
@@ -117,6 +141,12 @@ fn main() {
     );
     let rotation_speed = PI / 100.0;
 
+    let light = Light::new(
+        Vector3::new(5.0, 5.0, 5.0), // position
+        Vector3::new(1.0, 1.0, 1.0), // color
+        1.5, // intensity
+    );
+
     while !window.window_should_close() {
         framebuffer.clear();
 
@@ -134,7 +164,7 @@ fn main() {
             camera.orbit(0.0, rotation_speed);
         }
 
-        render(&mut framebuffer, &objects, &camera);
+        render(&mut framebuffer, &objects, &camera, &light);
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
     }

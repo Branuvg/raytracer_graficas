@@ -4,21 +4,24 @@ use raylib::prelude::*;
 #[derive(Debug, Clone, Copy)]
 pub struct Material {
     pub diffuse: Vector3, // Color
-    pub albedo: [f32; 1], // que tan colorido es
+    pub albedo: [f32; 2], // que tan colorido es: [color del objeto, color que viene de la luz]
+    pub specular: f32, // brillo
 }
 
 impl Material {
-    pub fn new(diffuse: Vector3, albedo: [f32; 1]) -> Self {
+    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32) -> Self {
         Material {
             diffuse,
             albedo,
+            specular,
         }
     }
     
     pub fn black() -> Self {
         Material {
             diffuse: Vector3::zero(),
-            albedo: [0.0],
+            albedo: [0.0, 0.0],
+            specular: 0.0,
         }
     }
 }

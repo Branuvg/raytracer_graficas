@@ -1,7 +1,7 @@
 // sphere.rs
-use raylib::prelude::*;
-use crate::ray_intersect::{RayIntersect, Intersect};
-use crate::material::Material;
+use raylib::prelude::Vector3;
+use crate::ray_intersect::{Intersect, RayIntersect};
+use crate::material::{Material};
 
 pub struct Sphere {
     pub center: Vector3,
@@ -11,7 +11,6 @@ pub struct Sphere {
 
 impl RayIntersect for Sphere {
     fn ray_intersect(&self, ray_origin: &Vector3, ray_direction: &Vector3) -> Intersect {
-        
         let oc = *ray_origin - self.center;
 
         let a = ray_direction.dot(*ray_direction);
@@ -22,8 +21,15 @@ impl RayIntersect for Sphere {
 
         if discriminant > 0.0 {
             let t = (-b - discriminant.sqrt()) / (2.0 * a);
+            let point = *ray_origin + *ray_direction * t;
+            let normal = (point - self.center).normalized();
             if t > 0.0 {
-                return Intersect::new(self.material, t);
+                return Intersect::new(
+                    self.material,
+                    t,
+                    normal,
+                    point
+                );
             }
         }
 

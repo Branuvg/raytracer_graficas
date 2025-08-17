@@ -9,14 +9,18 @@ pub struct Intersect {
     pub material: Material,
     pub distance: f32,
     pub is_intersecting: bool,
+    pub normal: Vector3,
+    pub point: Vector3,
 }
 
 impl Intersect {
-    pub fn new(material: Material, distance: f32) -> Self {
+    pub fn new(material: Material, distance: f32, normal: Vector3, point: Vector3) -> Self {
         Intersect {
             material,
             distance,
             is_intersecting: true,
+            normal,
+            point,
         }
     }
 
@@ -24,10 +28,13 @@ impl Intersect {
         Intersect {
             material: Material {
                 diffuse: Vector3::zero(),
-                albedo: [0.0],
+                albedo: [0.0, 0.0],
+                specular: 0.0,
             },
             distance: 0.0,
             is_intersecting: false,
+            normal: Vector3::zero(),
+            point: Vector3::zero(),
         }
     }
 }
