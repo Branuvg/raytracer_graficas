@@ -18,11 +18,15 @@ pub fn cast_ray(
     objects: &[Sphere],
 ) -> Color {
     let mut intersect = Intersect::empty();
+    let mut zbuffer = f32::INFINITY;
 
     for object in objects {
         let tmp = object.ray_intersect(ray_origin, ray_direction);
         if tmp.is_intersecting {
-            intersect = tmp;
+            if tmp.distance < zbuffer {
+                zbuffer = tmp.distance;
+                intersect = tmp;
+            }
         }
     }
 
@@ -80,19 +84,17 @@ fn main() {
         diffuse: Color::new(100, 100, 80, 255),
     };
 
-    //framebuffer.set_background_color(Color::new(4, 12, 36, 255));
-
     let objects = [
         Sphere {
-        center: Vector3::new(1.0, 0.0, -4.0),
-        radius: 1.0,
-        material: ivory,
-    },
-    Sphere {
-        center: Vector3::new(2.0, 0.0, -5.0),
-        radius: 1.0,
-        material: rubber,
-    },
+            center: Vector3::new(1.0, 0.0, -4.0),
+            radius: 1.0,
+            material: ivory,
+        },
+        Sphere {
+            center: Vector3::new(2.0, 0.0, -5.0),
+            radius: 1.0,
+            material: rubber,
+        },
     ];
 
     while !window.window_should_close() {

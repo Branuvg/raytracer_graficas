@@ -22,7 +22,7 @@ impl RayIntersect for Sphere {
         if discriminant > 0.0 {
             let t = (-b - discriminant.sqrt()) / (2.0 * a);
             if t > 0.0 {
-                return Intersect::new(self.material);
+                return Intersect::new(self.material, t);
             }
         }
 

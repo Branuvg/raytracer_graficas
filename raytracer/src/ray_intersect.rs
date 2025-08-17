@@ -10,13 +10,15 @@ pub struct Material {
 #[allow(dead_code)]
 pub struct Intersect {
     pub material: Material,
+    pub distance: f32,
     pub is_intersecting: bool,
 }
 
 impl Intersect {
-    pub fn new(material: Material) -> Self {
+    pub fn new(material: Material, distance: f32) -> Self {
         Intersect {
             material,
+            distance,
             is_intersecting: true,
         }
     }
@@ -26,6 +28,7 @@ impl Intersect {
             material: Material {
                 diffuse: Color::new(0, 0, 0, 0),
             },
+            distance: 0.0,
             is_intersecting: false,
         }
     }
