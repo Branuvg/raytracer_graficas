@@ -30,6 +30,7 @@ impl Intersect {
                 diffuse: Vector3::zero(),
                 albedo: [0.0, 0.0],
                 specular: 0.0,
+                reflectivity: 0.0,
             },
             distance: 0.0,
             is_intersecting: false,

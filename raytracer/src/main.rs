@@ -16,7 +16,7 @@ use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect};
 use sphere::Sphere;
 use camera::Camera;
-use material::{Material, vector3_to_color};
+use material::{Material, vector3_to_color, color_to_vector3};
 use light::Light;
 
 fn reflect(incident: &Vector3, normal: &Vector3) -> Vector3 {
@@ -40,12 +40,19 @@ fn cast_shadow(
     0.0
 }
 
+const SKYBOX_COLOR: Color = Color::new(4, 12, 36, 255);
+
 pub fn cast_ray(
     ray_origin: &Vector3,
     ray_direction: &Vector3,
     objects: &[Sphere],
     light: &Light,
+    depth: u32,
 ) -> Color {
+    if depth > 3 {
+        return SKYBOX_COLOR;
+    }
+
     let mut intersect = Intersect::empty();
     let mut zbuffer = f32::INFINITY;
 
@@ -60,7 +67,7 @@ pub fn cast_ray(
     }
 
     if !intersect.is_intersecting {
-        return Color::new(4, 12, 36, 255); //color del fondo
+        return SKYBOX_COLOR;  //color del fondo (SKYBOX_COLOR)
     }
     
     let light_direction = (light.position - intersect.point).normalized();
@@ -78,8 +85,12 @@ pub fn cast_ray(
     let specular_intensity = view_direction.dot(reflection_direction).max(0.0).powf(intersect.material.specular) * light_intensity;
     let specular = light.color * specular_intensity;
     
+    // Reflejo
+    let reflection_color = color_to_vector3(SKYBOX_COLOR);
+    let reflectivity = intersect.material.reflectivity;
+
     // Color final
-    let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1]; // [diffuse,specular] * albedo (su energia)
+    let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1] + reflection_color * reflectivity; // [diffuse,specular] * albedo (su energia) + reflection_color * reflectivity
 
     vector3_to_color(color)
 }
@@ -104,7 +115,7 @@ pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera
 
             let rotated_direction = camera.basis_change(&ray_direction);
 
-            let pixel_color = cast_ray(&camera.eye, &rotated_direction, objects, light);
+            let pixel_color = cast_ray(&camera.eye, &rotated_direction, objects, light, 0);
 
             framebuffer.set_current_color(pixel_color);
             framebuffer.set_pixel(x, y);
@@ -128,12 +139,21 @@ fn main() {
         diffuse: Vector3::new(0.3, 0.1, 0.1),
         albedo: [0.9,0.1],
         specular: 5.0,
+        reflectivity: 0.0,
     };
 
     let ivory = Material {
         diffuse: Vector3::new(0.4, 0.4, 0.3),
         albedo: [0.6,0.3],
         specular: 50.0,
+        reflectivity: 0.3,
+    };
+
+    let mirror = Material {
+        diffuse: Vector3::new(1.0, 1.0, 1.0),
+        albedo: [0.0,10.0],
+        specular: 1500.0,
+        reflectivity: 0.8,
     };
 
     let objects = [
@@ -151,6 +171,11 @@ fn main() {
             center: Vector3::new(1.0, 1.0, 1.0),
             radius: 0.5,
             material: rubber,
+        },
+        Sphere {
+            center: Vector3::new(1.0, -1.0, 1.0),
+            radius: 0.7,
+            material: mirror,
         },
     ];
 

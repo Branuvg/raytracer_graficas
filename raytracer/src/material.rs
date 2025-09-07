@@ -6,14 +6,16 @@ pub struct Material {
     pub diffuse: Vector3, // Color
     pub albedo: [f32; 2], // que tan colorido es: [color del objeto, color que viene de la luz]
     pub specular: f32, // brillo
+    pub reflectivity: f32, // reflectividad, 1.0 espejo, 0.0 no refleja nada
 }
 
 impl Material {
-    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32) -> Self {
+    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32, reflectivity: f32) -> Self {
         Material {
             diffuse,
             albedo,
             specular,
+            reflectivity,
         }
     }
     
@@ -22,6 +24,7 @@ impl Material {
             diffuse: Vector3::zero(),
             albedo: [0.0, 0.0],
             specular: 0.0,
+            reflectivity: 0.0,
         }
     }
 }
@@ -32,5 +35,13 @@ pub fn vector3_to_color(v: Vector3) -> Color {
         (v.y * 255.0).min(255.0) as u8,
         (v.z * 255.0).min(255.0) as u8,
         255,
+    )
+}
+
+pub fn color_to_vector3(color: Color) -> Vector3 {
+    Vector3::new(
+        color.r as f32 / 255.0,
+        color.g as f32 / 255.0,
+        color.b as f32 / 255.0,
     )
 }
