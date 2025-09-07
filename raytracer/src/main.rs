@@ -60,7 +60,7 @@ pub fn cast_ray(
     }
 
     if !intersect.is_intersecting {
-        return Color::new(4, 12, 36, 255);
+        return Color::new(4, 12, 36, 255); //color del fondo
     }
     
     let light_direction = (light.position - intersect.point).normalized();
