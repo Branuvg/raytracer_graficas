@@ -16,7 +16,7 @@ use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect};
 use sphere::Sphere;
 use camera::Camera;
-use material::{Material, vector3_to_color, color_to_vector3};
+use material::{Material, vector3_to_color};
 use light::Light;
 
 fn reflect(incident: &Vector3, normal: &Vector3) -> Vector3 {
@@ -40,7 +40,7 @@ fn cast_shadow(
     0.0
 }
 
-const SKYBOX_COLOR: Color = Color::new(4, 12, 36, 255);
+const SKYBOX_COLOR: Vector3 = Vector3::new(0.01, 0.03, 0.8);
 
 pub fn cast_ray(
     ray_origin: &Vector3,
@@ -48,7 +48,7 @@ pub fn cast_ray(
     objects: &[Sphere],
     light: &Light,
     depth: u32,
-) -> Color {
+) -> Vector3 {
     if depth > 3 {
         return SKYBOX_COLOR;
     }
@@ -86,13 +86,19 @@ pub fn cast_ray(
     let specular = light.color * specular_intensity;
     
     // Reflejo
-    let reflection_color = color_to_vector3(SKYBOX_COLOR);
+    let mut reflection_color = SKYBOX_COLOR;
     let reflectivity = intersect.material.reflectivity;
+
+    if reflectivity > 0.0 {
+        let reflect_dir = reflect(ray_direction, &intersect.normal);
+        let reflect_origin = intersect.point;
+        reflection_color = cast_ray(&reflect_origin, &reflect_dir, objects, light, depth + 1);
+    }
 
     // Color final
     let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1] + reflection_color * reflectivity; // [diffuse,specular] * albedo (su energia) + reflection_color * reflectivity
 
-    vector3_to_color(color)
+    color
 }
 
 pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera, light: &Light) {
@@ -115,7 +121,8 @@ pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera
 
             let rotated_direction = camera.basis_change(&ray_direction);
 
-            let pixel_color = cast_ray(&camera.eye, &rotated_direction, objects, light, 0);
+            let pixel_color_vec = cast_ray(&camera.eye, &rotated_direction, objects, light, 0);
+            let pixel_color = vector3_to_color(pixel_color_vec);
 
             framebuffer.set_current_color(pixel_color);
             framebuffer.set_pixel(x, y);
