@@ -21,7 +21,31 @@ use material::{Material, vector3_to_color};
 use light::Light;
 use snell::{reflect, refract};
 
-//las ecuaciones de snell.rs podrian estar aca para no tener una archivo mas
+fn procedural_sky(dir: Vector3) -> Vector3 { //color del fondo, si se quiere un color solido, usar SKYBOX_COLOR (ultima linea de esta función)
+    let d = dir.normalized();
+    let t = (d.y + 1.0) * 0.5; // map y [-1,1] → [0,1]
+
+    let green = Vector3::new(0.1, 0.6, 0.2); // grass green
+    let white = Vector3::new(1.0, 1.0, 1.0); // horizon haze
+    let blue = Vector3::new(0.3, 0.5, 1.0);  // sky blue
+
+    if t < 0.54 {
+        // Bottom → fade green to white
+        let k = t / 0.55;
+        green * (1.0 - k) + white * k
+    } else if t < 0.55 {
+        // Around horizon → mostly white
+        white
+    } else if t < 0.8 {
+        // Fade white to blue
+        let k = (t - 0.55) / (0.25);
+        white * (1.0 - k) + blue * k
+    } else {
+        // Upper sky → solid blue
+        blue
+    }
+}
+//const SKYBOX_COLOR: Vector3 = Vector3::new(0.01, 0.3, 0.8);
 
 fn cast_shadow(
     intersect: &Intersect,
@@ -40,9 +64,7 @@ fn cast_shadow(
     0.0
 }
 
-const SKYBOX_COLOR: Vector3 = Vector3::new(0.01, 0.3, 0.8); //color del fondo
 const ORIGIN_BIAS: f32 = 1e-4;
-
 fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
     let offset = intersect.normal * ORIGIN_BIAS;
     if ray_direction.dot(intersect.normal) < 0.0 {
@@ -61,7 +83,7 @@ pub fn cast_ray(
 ) -> Vector3 {
     
     if depth > 3 { //cantidad de rebotes que puede dar el rayo
-        return SKYBOX_COLOR;
+        return procedural_sky(*ray_direction);
     }
 
     let mut intersect = Intersect::empty();
@@ -78,7 +100,7 @@ pub fn cast_ray(
     }
 
     if !intersect.is_intersecting {
-        return SKYBOX_COLOR;  //color del fondo (SKYBOX_COLOR)
+        return procedural_sky(*ray_direction);  //color del fondo (SKYBOX_COLOR)
     }
     
     let light_direction = (light.position - intersect.point).normalized();
@@ -97,7 +119,7 @@ pub fn cast_ray(
     let specular = light.color * specular_intensity;
     
     // Reflejo
-    let mut reflection_color = SKYBOX_COLOR;
+    let mut reflection_color = procedural_sky(*ray_direction);
     let reflectivity = intersect.material.reflectivity;
 
     if reflectivity > 0.0 {
@@ -195,7 +217,7 @@ fn main() {
         diffuse: Vector3::new(1.0, 1.0, 1.0),
         albedo: [0.0,5.0],
         specular: 125.0,
-        reflectivity: 0.2,
+        reflectivity: 0.1,
         transparency: 0.9,
         refractive_index: 1.5,
     };
