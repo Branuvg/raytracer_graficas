@@ -2,11 +2,21 @@
 use raylib::prelude::Vector3;
 use crate::ray_intersect::{Intersect, RayIntersect};
 use crate::material::{Material};
+use std::f32::consts::PI;
 
 pub struct Sphere {
     pub center: Vector3,
     pub radius: f32,
     pub material: Material,
+}
+
+impl Sphere {
+    fn get_uv(&self, point: &Vector3) -> (f32, f32) {
+        let normlaized = (*point - self.center) / self.radius;
+        let u = 0.5 + normlaized.x.atan2(normlaized.z) / (2.0 * PI);
+        let v = 0.5 + normlaized.y.asin() / PI;
+        (u, v)
+    }
 }
 
 impl RayIntersect for Sphere {
@@ -23,12 +33,15 @@ impl RayIntersect for Sphere {
             let t = (-b - discriminant.sqrt()) / (2.0 * a);
             let point = *ray_origin + *ray_direction * t;
             let normal = (point - self.center).normalized();
+            let (u, v) = self.get_uv(&point);
             if t > 0.0 {
                 return Intersect::new(
-                    self.material,
+                    self.material.clone(),
                     t,
                     normal,
-                    point
+                    point,
+                    u,
+                    v
                 );
             }
         }

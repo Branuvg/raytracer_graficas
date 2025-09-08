@@ -1,7 +1,7 @@
 // material.rs
 use raylib::prelude::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Material {
     pub diffuse: Vector3, // Color
     pub albedo: [f32; 2], // que tan colorido es: [color del objeto, color que viene de la luz]
@@ -9,10 +9,11 @@ pub struct Material {
     pub reflectivity: f32, // reflectividad, 1.0 espejo, 0.0 no refleja nada
     pub transparency: f32, // transparencia, 1.0 perfectamente transparente, 0.0 no transparente
     pub refractive_index: f32, // indice de refraccion
+    pub texture: Option<String>, // path to texture
 }
 
 impl Material {
-    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32, reflectivity: f32, transparency: f32, refractive_index: f32) -> Self {
+    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32, reflectivity: f32, transparency: f32, refractive_index: f32, texture: Option<String>) -> Self {
         Material {
             diffuse,
             albedo,
@@ -20,6 +21,7 @@ impl Material {
             reflectivity,
             transparency,
             refractive_index,
+            texture,
         }
     }
     
@@ -31,6 +33,7 @@ impl Material {
             reflectivity: 0.0,
             transparency: 0.0,
             refractive_index: 0.0,
+            texture: None,
         }
     }
 }
