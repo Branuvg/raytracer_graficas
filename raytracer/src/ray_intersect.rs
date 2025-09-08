@@ -31,6 +31,8 @@ impl Intersect {
                 albedo: [0.0, 0.0],
                 specular: 0.0,
                 reflectivity: 0.0,
+                transparency: 0.0,
+                refractive_index: 0.0,
             },
             distance: 0.0,
             is_intersecting: false,

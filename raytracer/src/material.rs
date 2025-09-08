@@ -7,15 +7,19 @@ pub struct Material {
     pub albedo: [f32; 2], // que tan colorido es: [color del objeto, color que viene de la luz]
     pub specular: f32, // brillo
     pub reflectivity: f32, // reflectividad, 1.0 espejo, 0.0 no refleja nada
+    pub transparency: f32, // transparencia, 1.0 perfectamente transparente, 0.0 no transparente
+    pub refractive_index: f32, // indice de refraccion
 }
 
 impl Material {
-    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32, reflectivity: f32) -> Self {
+    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32, reflectivity: f32, transparency: f32, refractive_index: f32) -> Self {
         Material {
             diffuse,
             albedo,
             specular,
             reflectivity,
+            transparency,
+            refractive_index,
         }
     }
     
@@ -25,6 +29,8 @@ impl Material {
             albedo: [0.0, 0.0],
             specular: 0.0,
             reflectivity: 0.0,
+            transparency: 0.0,
+            refractive_index: 0.0,
         }
     }
 }

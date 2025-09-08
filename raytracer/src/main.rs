@@ -10,7 +10,8 @@ mod ray_intersect;
 mod sphere;
 mod camera;
 mod material;
-mod light; 
+mod light;
+mod snell;
 
 use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect};
@@ -18,10 +19,9 @@ use sphere::Sphere;
 use camera::Camera;
 use material::{Material, vector3_to_color};
 use light::Light;
+use snell::{reflect, refract};
 
-fn reflect(incident: &Vector3, normal: &Vector3) -> Vector3 {
-    *incident - *normal * 2.0 * incident.dot(*normal)
-}
+//las ecuaciones de snell.rs podrian estar aca para no tener una archivo mas
 
 fn cast_shadow(
     intersect: &Intersect,
@@ -34,13 +34,23 @@ fn cast_shadow(
     for object in objects {
         let shadow_intersect = object.ray_intersect(&shadow_ray_origin, &light_direction);
         if shadow_intersect.is_intersecting {
-            return 0.8; //cambiar esto a una proporcion de la distancia para que haga el sh
+            return 0.7; //cambiar esto a una proporcion de la distancia para que haga el shadow
         }
     }
     0.0
 }
 
-const SKYBOX_COLOR: Vector3 = Vector3::new(0.01, 0.03, 0.8);
+const SKYBOX_COLOR: Vector3 = Vector3::new(0.01, 0.3, 0.8); //color del fondo
+const ORIGIN_BIAS: f32 = 1e-4;
+
+fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
+    let offset = intersect.normal * ORIGIN_BIAS;
+    if ray_direction.dot(intersect.normal) < 0.0 {
+        intersect.point - offset
+    } else {
+        intersect.point + offset
+    }
+}
 
 pub fn cast_ray(
     ray_origin: &Vector3,
@@ -49,7 +59,8 @@ pub fn cast_ray(
     light: &Light,
     depth: u32,
 ) -> Vector3 {
-    if depth > 3 {
+    
+    if depth > 3 { //cantidad de rebotes que puede dar el rayo
         return SKYBOX_COLOR;
     }
 
@@ -90,13 +101,24 @@ pub fn cast_ray(
     let reflectivity = intersect.material.reflectivity;
 
     if reflectivity > 0.0 {
-        let reflect_dir = reflect(ray_direction, &intersect.normal);
+        let reflect_direction = reflect(ray_direction, &intersect.normal);
         let reflect_origin = intersect.point;
-        reflection_color = cast_ray(&reflect_origin, &reflect_dir, objects, light, depth + 1);
+        reflection_color = cast_ray(&reflect_origin, &reflect_direction, objects, light, depth + 1);
+    }
+
+    //Transparencia
+    let transparency = intersect.material.transparency;
+    let mut refraction_color = Vector3::zero();
+
+    if transparency > 0.0 {
+        let refract_direction = refract(ray_direction, &intersect.normal, intersect.material.refractive_index);
+        let refract_origin = offset_origin(&intersect, &refract_direction);
+
+        refraction_color = cast_ray(&refract_origin, &refract_direction, objects, light, depth + 1);
     }
 
     // Color final
-    let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1] + reflection_color * reflectivity; // [diffuse,specular] * albedo (su energia) + reflection_color * reflectivity
+    let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1] + reflection_color * reflectivity + refraction_color * transparency; // [diffuse,specular] * albedo (su energia) + reflection_color * reflectivity
 
     color
 }
@@ -147,6 +169,8 @@ fn main() {
         albedo: [0.9,0.1],
         specular: 5.0,
         reflectivity: 0.0,
+        transparency: 0.0,
+        refractive_index: 0.0,
     };
 
     let ivory = Material {
@@ -154,21 +178,29 @@ fn main() {
         albedo: [0.6,0.3],
         specular: 50.0,
         reflectivity: 0.3,
+        transparency: 0.0,
+        refractive_index: 0.0,
     };
 
-    let mirror = Material {
+    let mirror = Material { //NOT A GLASS BALL
         diffuse: Vector3::new(1.0, 1.0, 1.0),
         albedo: [0.0,10.0],
         specular: 1500.0,
-        reflectivity: 0.8,
+        reflectivity: 0.9,
+        transparency: 0.1,
+        refractive_index: 1.5,
+    };
+
+    let glass = Material {
+        diffuse: Vector3::new(1.0, 1.0, 1.0),
+        albedo: [0.0,5.0],
+        specular: 125.0,
+        reflectivity: 0.2,
+        transparency: 0.9,
+        refractive_index: 1.5,
     };
 
     let objects = [
-        Sphere {
-            center: Vector3::new(1.0, 0.0, -4.0),
-            radius: 1.0,
-            material: ivory,
-        },
         Sphere {
             center: Vector3::new(0.0, 0.0, 0.0),
             radius: 1.0,
@@ -180,9 +212,19 @@ fn main() {
             material: rubber,
         },
         Sphere {
-            center: Vector3::new(1.0, -1.0, 1.0),
+            center: Vector3::new(2.0, 0.0, -4.0),
+            radius: 1.0,
+            material: ivory,
+        },
+        Sphere {
+            center: Vector3::new(2.0, -0.5, -1.0),
             radius: 0.7,
             material: mirror,
+        },
+        Sphere {
+            center: Vector3::new(-1.5, 0.0, -1.0),
+            radius: 0.5,
+            material: glass,
         },
     ];
 
