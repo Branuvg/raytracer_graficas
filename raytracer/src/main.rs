@@ -1,4 +1,3 @@
-// main.rs
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
@@ -7,7 +6,7 @@ use std::f32::consts::PI;
 
 mod framebuffer;
 mod ray_intersect;
-mod sphere;
+mod cube;  // Cambiado de sphere a cube
 mod camera;
 mod material;
 mod light;
@@ -16,7 +15,7 @@ mod textures;
 
 use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect};
-use sphere::Sphere;
+use cube::Cube;  // Cambiado de sphere::Sphere a cube::Cube
 use camera::Camera;
 use material::{Material, vector3_to_color};
 use light::Light;
@@ -52,7 +51,7 @@ fn procedural_sky(dir: Vector3) -> Vector3 { //color del fondo, si se quiere un 
 fn cast_shadow(
     intersect: &Intersect,
     light: &Light,
-    objects: &[Sphere],
+    objects: &[Cube],  // Cambiado de Sphere a Cube
 ) -> f32 {
     let light_direction = (light.position - intersect.point).normalized();
     let shadow_ray_origin = intersect.point;
@@ -69,17 +68,14 @@ fn cast_shadow(
 const ORIGIN_BIAS: f32 = 1e-4;
 fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
     let offset = intersect.normal * ORIGIN_BIAS;
-    if ray_direction.dot(intersect.normal) < 0.0 {
-        intersect.point - offset
-    } else {
-        intersect.point + offset
-    }
+    // Siempre mover ligeramente en la dirección de la normal para evitar auto-intersección
+    intersect.point + offset
 }
 
 pub fn cast_ray(
     ray_origin: &Vector3,
     ray_direction: &Vector3,
-    objects: &[Sphere],
+    objects: &[Cube],  // Cambiado de Sphere a Cube
     light: &Light,
     depth: u32,
     texture_manager: &TextureManager,
@@ -117,8 +113,24 @@ pub fn cast_ray(
         let tx = (intersect.u * width as f32) as u32;
         let ty = (intersect.v * height as f32) as u32;
         if let Some(tex_normal) = texture_manager.get_normal_from_map(normal_map_path, tx, ty) {
-            let tangent = Vector3::new(normal.y, -normal.x, 0.0).normalized();
-            let bitangent = normal.cross(tangent);
+            // Calcular tangente y bitangente basándose en la cara del cubo
+            let (tangent, bitangent) = if normal.x.abs() > 0.9 {
+                // Cara X
+                let tangent = Vector3::new(0.0, 0.0, normal.x);
+                let bitangent = Vector3::new(0.0, -1.0, 0.0);
+                (tangent, bitangent)
+            } else if normal.y.abs() > 0.9 {
+                // Cara Y
+                let tangent = Vector3::new(1.0, 0.0, 0.0);
+                let bitangent = Vector3::new(0.0, 0.0, normal.y);
+                (tangent, bitangent)
+            } else {
+                // Cara Z
+                let tangent = Vector3::new(-normal.z, 0.0, 0.0);
+                let bitangent = Vector3::new(0.0, -1.0, 0.0);
+                (tangent, bitangent)
+            };
+            
             let transformed_normal_x = tex_normal.x * tangent.x + tex_normal.y * bitangent.x + tex_normal.z * normal.x;
             let transformed_normal_y = tex_normal.x * tangent.y + tex_normal.y * bitangent.y + tex_normal.z * normal.y;
             let transformed_normal_z = tex_normal.x * tangent.z + tex_normal.y * bitangent.z + tex_normal.z * normal.z;
@@ -159,7 +171,7 @@ pub fn cast_ray(
 
     if reflectivity > 0.0 {
         let reflect_direction = reflect(ray_direction, &normal);
-        let reflect_origin = intersect.point;
+        let reflect_origin = intersect.point + normal * ORIGIN_BIAS;
         reflection_color = cast_ray(&reflect_origin, &reflect_direction, objects, light, depth + 1, texture_manager);
     }
 
@@ -180,7 +192,7 @@ pub fn cast_ray(
     color
 }
 
-pub fn render(framebuffer: &mut Framebuffer, objects: &[Sphere], camera: &Camera, light: &Light, texture_manager: &TextureManager) {
+pub fn render(framebuffer: &mut Framebuffer, objects: &[Cube], camera: &Camera, light: &Light, texture_manager: &TextureManager) {  // Cambiado de Sphere a Cube
 
     let width = framebuffer.width as f32;
     let height = framebuffer.height as f32;
@@ -269,30 +281,31 @@ fn main() {
         normal_map_id: None,
     };
 
+    // Cambiado todos los Sphere por Cube y radius por size
     let objects = [
-        Sphere {
+        Cube {
             center: Vector3::new(0.0, 0.0, 0.0),
-            radius: 1.0,
+            size: 2.0,  // Cambiado de radius a size
             material: rubber.clone(),
         },
-        Sphere {
+/*         Cube {
             center: Vector3::new(1.0, 1.0, 1.0),
-            radius: 0.5,
+            size: 1.0,  // Cambiado de radius a size
             material: rubber.clone(),
         },
-        Sphere {
+        Cube {
             center: Vector3::new(2.0, 0.0, -4.0),
-            radius: 1.0,
+            size: 2.0,  // Cambiado de radius a size
             material: ivory,
         },
-        Sphere {
+        Cube {
             center: Vector3::new(2.0, -0.5, -1.0),
-            radius: 0.7,
+            size: 1.4,  // Cambiado de radius a size
             material: mirror,
-        },
-        Sphere {
+        }, */
+        Cube {
             center: Vector3::new(-1.5, 0.0, -1.0),
-            radius: 0.5,
+            size: 1.0,  // Cambiado de radius a size
             material: glass,
         },
     ];
