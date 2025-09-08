@@ -116,11 +116,9 @@ pub fn cast_ray(
         let height = texture.height() as u32;
         let tx = (intersect.u * width as f32) as u32;
         let ty = (intersect.v * height as f32) as u32;
-        
         if let Some(tex_normal) = texture_manager.get_normal_from_map(normal_map_path, tx, ty) {
             let tangent = Vector3::new(normal.y, -normal.x, 0.0).normalized();
             let bitangent = normal.cross(tangent);
-            
             let transformed_normal_x = tex_normal.x * tangent.x + tex_normal.y * bitangent.x + tex_normal.z * normal.x;
             let transformed_normal_y = tex_normal.x * tangent.y + tex_normal.y * bitangent.y + tex_normal.z * normal.y;
             let transformed_normal_z = tex_normal.x * tangent.z + tex_normal.y * bitangent.z + tex_normal.z * normal.z;
