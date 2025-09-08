@@ -10,10 +10,11 @@ pub struct Material {
     pub transparency: f32, // transparencia, 1.0 perfectamente transparente, 0.0 no transparente
     pub refractive_index: f32, // indice de refraccion
     pub texture: Option<String>, // path to texture
+    pub normal_map_id: Option<String>, // path to normal map
 }
 
 impl Material {
-    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32, reflectivity: f32, transparency: f32, refractive_index: f32, texture: Option<String>) -> Self {
+    pub fn new(diffuse: Vector3, albedo: [f32; 2], specular: f32, reflectivity: f32, transparency: f32, refractive_index: f32, texture: Option<String>, normal_map_id: Option<String>) -> Self {
         Material {
             diffuse,
             albedo,
@@ -22,6 +23,7 @@ impl Material {
             transparency,
             refractive_index,
             texture,
+            normal_map_id,
         }
     }
     
@@ -34,6 +36,7 @@ impl Material {
             transparency: 0.0,
             refractive_index: 0.0,
             texture: None,
+            normal_map_id: None,
         }
     }
 }

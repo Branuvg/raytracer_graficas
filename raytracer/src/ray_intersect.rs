@@ -38,6 +38,7 @@ impl Intersect {
                 transparency: 0.0,
                 refractive_index: 0.0,
                 texture: None,
+                normal_map_id: None,
             },
             distance: 0.0,
             is_intersecting: false,

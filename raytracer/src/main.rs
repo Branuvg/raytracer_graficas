@@ -23,7 +23,7 @@ use light::Light;
 use snell::{reflect, refract};
 use textures::TextureManager;
 
-fn procedural_sky(dir: Vector3) -> Vector3 { //color del fondo, si se quiere un color solido, usar SKYBOX_COLOR (ultima linea de esta función)
+fn procedural_sky(dir: Vector3) -> Vector3 { //color del fondo, si se quiere un color solido, usar SKYBOX_COLOR (ultima linea de esta función) y cambiar donde diga //color del fondo
     let d = dir.normalized();
     let t = (d.y + 1.0) * 0.5; // map y [-1,1] → [0,1]
 
@@ -86,7 +86,7 @@ pub fn cast_ray(
 ) -> Vector3 {
     
     if depth > 3 { //cantidad de rebotes que puede dar el rayo
-        return procedural_sky(*ray_direction);
+        return procedural_sky(*ray_direction); //color del fondo
     }
 
     let mut intersect = Intersect::empty();
@@ -108,13 +108,34 @@ pub fn cast_ray(
     
     let light_direction = (light.position - intersect.point).normalized();
     let view_direction = (*ray_origin - intersect.point).normalized();
-    let reflection_direction = reflect(&-light_direction, &-intersect.normal).normalized();
+    
+    let mut normal = intersect.normal;
+    if let Some(normal_map_path) = &intersect.material.normal_map_id {
+        let texture = texture_manager.get_texture(normal_map_path).unwrap();
+        let width = texture.width() as u32;
+        let height = texture.height() as u32;
+        let tx = (intersect.u * width as f32) as u32;
+        let ty = (intersect.v * height as f32) as u32;
+        
+        if let Some(tex_normal) = texture_manager.get_normal_from_map(normal_map_path, tx, ty) {
+            let tangent = Vector3::new(normal.y, -normal.x, 0.0).normalized();
+            let bitangent = normal.cross(tangent);
+            
+            let transformed_normal_x = tex_normal.x * tangent.x + tex_normal.y * bitangent.x + tex_normal.z * normal.x;
+            let transformed_normal_y = tex_normal.x * tangent.y + tex_normal.y * bitangent.y + tex_normal.z * normal.y;
+            let transformed_normal_z = tex_normal.x * tangent.z + tex_normal.y * bitangent.z + tex_normal.z * normal.z;
+            
+            normal = Vector3::new(transformed_normal_x, transformed_normal_y, transformed_normal_z).normalized();
+        }
+    }
 
+    let reflection_direction = reflect(&-light_direction, &normal).normalized();
+    
     let shadow_intensity = cast_shadow(&intersect, light, objects);
     let light_intensity = light.intensity * (1.0 - shadow_intensity);
     
     // Difuso
-    let diffuse_intensity = intersect.normal.dot(light_direction).max(0.0) * light_intensity;
+    let diffuse_intensity = normal.dot(light_direction).max(0.0) * light_intensity;
 
     let diffuse_color = if let Some(texture_path) = &intersect.material.texture {
         let texture = texture_manager.get_texture(texture_path).unwrap();
@@ -135,11 +156,11 @@ pub fn cast_ray(
     let specular = light.color * specular_intensity;
     
     // Reflejo
-    let mut reflection_color = procedural_sky(*ray_direction);
+    let mut reflection_color = procedural_sky(*ray_direction); //color del fondo
     let reflectivity = intersect.material.reflectivity;
 
     if reflectivity > 0.0 {
-        let reflect_direction = reflect(ray_direction, &intersect.normal);
+        let reflect_direction = reflect(ray_direction, &normal);
         let reflect_origin = intersect.point;
         reflection_color = cast_ray(&reflect_origin, &reflect_direction, objects, light, depth + 1, texture_manager);
     }
@@ -149,7 +170,7 @@ pub fn cast_ray(
     let mut refraction_color = Vector3::zero();
 
     if transparency > 0.0 {
-        let refract_direction = refract(ray_direction, &intersect.normal, intersect.material.refractive_index);
+        let refract_direction = refract(ray_direction, &normal, intersect.material.refractive_index);
         let refract_origin = offset_origin(&intersect, &refract_direction);
 
         refraction_color = cast_ray(&refract_origin, &refract_direction, objects, light, depth + 1, texture_manager);
@@ -202,7 +223,7 @@ fn main() {
 
     let mut texture_manager = TextureManager::new();
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/bricks.jpg");
-    //texture_manager.load_texture(&mut window, &raylib_thread, "assets/ball_pngmal.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/bricks_normal.png");
 
     let mut framebuffer = Framebuffer::new(window_width as i32, window_height as i32);
 
@@ -214,6 +235,7 @@ fn main() {
         transparency: 0.0,
         refractive_index: 0.0,
         texture: Some("assets/bricks.jpg".to_string()),
+        normal_map_id: Some("assets/bricks_normal.png".to_string()),
     };
 
     let ivory = Material {
@@ -224,6 +246,7 @@ fn main() {
         transparency: 0.0,
         refractive_index: 0.0,
         texture: None,
+        normal_map_id: None,
     };
 
     let mirror = Material { //NOT A GLASS BALL
@@ -234,6 +257,7 @@ fn main() {
         transparency: 0.1,
         refractive_index: 1.5,
         texture: None,
+        normal_map_id: None,
     };
 
     let glass = Material {
@@ -244,6 +268,7 @@ fn main() {
         transparency: 0.9,
         refractive_index: 1.5,
         texture: None,
+        normal_map_id: None,
     };
 
     let objects = [
@@ -257,7 +282,7 @@ fn main() {
             radius: 0.5,
             material: rubber.clone(),
         },
-/*         Sphere {
+        Sphere {
             center: Vector3::new(2.0, 0.0, -4.0),
             radius: 1.0,
             material: ivory,
@@ -271,7 +296,7 @@ fn main() {
             center: Vector3::new(-1.5, 0.0, -1.0),
             radius: 0.5,
             material: glass,
-        }, */
+        },
     ];
 
     let mut camera = Camera::new(
@@ -280,6 +305,7 @@ fn main() {
         Vector3::new(0.0, 1.0, 0.0),  // up
     );
     let rotation_speed = PI / 100.0;
+    let zoom_speed = 0.1;
 
     let light = Light::new(
         Vector3::new(5.0, 5.0, 5.0), // position
@@ -288,6 +314,8 @@ fn main() {
     );
 
     while !window.window_should_close() {
+        framebuffer.clear();
+
         // camera controls
         if window.is_key_down(KeyboardKey::KEY_LEFT) {
             camera.orbit(rotation_speed, 0.0);
@@ -301,11 +329,15 @@ fn main() {
         if window.is_key_down(KeyboardKey::KEY_DOWN) {
             camera.orbit(0.0, rotation_speed);
         }
-        if camera.is_changed(){
-            framebuffer.clear();
-            render(&mut framebuffer, &objects, &camera, &light, &texture_manager);
+        if window.is_key_down(KeyboardKey::KEY_W) {
+            camera.zoom(zoom_speed);
+        }
+        if window.is_key_down(KeyboardKey::KEY_S) {
+            camera.zoom(-zoom_speed);
         }
 
+        render(&mut framebuffer, &objects, &camera, &light, &texture_manager);
+        
         framebuffer.swap_buffers(&mut window, &raylib_thread);
     }
 }
