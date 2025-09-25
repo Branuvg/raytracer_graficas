@@ -214,23 +214,33 @@ fn main() {
         .build();
 
     let mut texture_manager = TextureManager::new();
-    texture_manager.load_texture(&mut window, &raylib_thread, "assets/bricks.jpg");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/bricks_normal.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/grass.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/glass.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/magma.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/diamond_ore.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/oak.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/wood_planks.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/stone.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/obsidian.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/water.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/leaves.png");
+    texture_manager.load_texture(&mut window, &raylib_thread, "assets/dirt.png");
 
     let mut framebuffer = Framebuffer::new(window_width as i32, window_height as i32);
 
-    let rubber = Material {
+/*     let rubber = Material {
         diffuse: Vector3::new(0.3, 0.1, 0.1),
         albedo: [0.9,0.1],
         specular: 5.0,
         reflectivity: 0.0,
         transparency: 0.0,
         refractive_index: 0.0,
-        texture: Some("assets/bricks.jpg".to_string()),
-        normal_map_id: Some("assets/bricks_normal.png".to_string()),
-    };
-
-    let ivory = Material {
+        texture: None,
+        normal_map_id: None,
+    }; */
+    
+/*     let ivory = Material {
         diffuse: Vector3::new(0.4, 0.4, 0.3),
         albedo: [0.6,0.3],
         specular: 50.0,
@@ -239,9 +249,9 @@ fn main() {
         refractive_index: 0.0,
         texture: None,
         normal_map_id: None,
-    };
-
-    let mirror = Material {
+    }; */
+    
+/*     let mirror = Material {
         diffuse: Vector3::new(1.0, 1.0, 1.0),
         albedo: [0.0,10.0],
         specular: 1500.0,
@@ -250,7 +260,7 @@ fn main() {
         refractive_index: 1.5,
         texture: None,
         normal_map_id: None,
-    };
+    }; */
 
     let glass = Material {
         diffuse: Vector3::new(1.0, 1.0, 1.0),
@@ -259,36 +269,176 @@ fn main() {
         reflectivity: 0.1,
         transparency: 0.9,
         refractive_index: 1.5,
-        texture: None,
+        texture: Some("assets/glass.png".to_string()),
+        normal_map_id: None,
+    };
+    
+    let dirt = Material {
+        diffuse: Vector3::new(0.4, 0.26, 0.13), // Color marrón tierra
+        albedo: [0.8, 0.2],
+        specular: 1.0,
+        reflectivity: 0.0,
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/dirt.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let grass = Material {
+        diffuse: Vector3::new(0.2, 0.6, 0.2), // Verde hierba
+        albedo: [0.7, 0.3],
+        specular: 2.0,
+        reflectivity: 0.05,
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/grass.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let leaves = Material {
+        diffuse: Vector3::new(0.1, 0.5, 0.1), // Verde hoja más oscuro
+        albedo: [0.6, 0.4],
+        specular: 3.0,
+        reflectivity: 0.02,
+        transparency: 0.3, // Ligeramente transparentes
+        refractive_index: 1.2,
+        texture: Some("assets/leaves.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let magma = Material {
+        diffuse: Vector3::new(1.0, 0.3, 0.0), // Rojo-naranja intenso
+        albedo: [0.9, 0.1],
+        specular: 50.0, // Muy brillante
+        reflectivity: 0.2,
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/magma.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let oak = Material {
+        diffuse: Vector3::new(0.6, 0.4, 0.2), // Marrón madera
+        albedo: [0.8, 0.2],
+        specular: 5.0,
+        reflectivity: 0.0,
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/oak.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let wood_planks = Material {
+        diffuse: Vector3::new(0.6, 0.4, 0.2), // Marrón madera
+        albedo: [0.8, 0.2],
+        specular: 5.0,
+        reflectivity: 0.0,
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/wood_planks.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let stone = Material {
+        diffuse: Vector3::new(0.5, 0.5, 0.5), // Gris piedra
+        albedo: [0.7, 0.3],
+        specular: 8.0,
+        reflectivity: 0.05,
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/stone.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let diamond_ore = Material {
+        diffuse: Vector3::new(0.4, 0.4, 0.4), // Gris piedra base
+        albedo: [0.5, 0.5], // Balance entre color propio y reflexión
+        specular: 80.0, // Bastante brillante por los diamantes incrustados
+        reflectivity: 0.3, // Moderadamente reflectivo
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/diamond_ore.png".to_string()),
+        normal_map_id: None,
+    };
+
+    let obsidian = Material {
+        diffuse: Vector3::new(0.1, 0.05, 0.15), // Negro con tinte púrpura sutil
+        albedo: [0.8, 0.2],
+        specular: 10.0, // Menos brillante, más mate
+        reflectivity: 0.1, // Menos reflectivo
+        transparency: 0.0,
+        refractive_index: 1.0,
+        texture: Some("assets/obsidian.png".to_string()),
+        normal_map_id: None,
+    };
+    
+    let water = Material {
+        diffuse: Vector3::new(0.0, 0.3, 0.9), // Azul más vibrante y saturado
+        albedo: [0.6, 0.4],
+        specular: 30.0, // Menos brillante que vidrio
+        reflectivity: 0.15, // Menos reflectivo
+        transparency: 0.6, // Menos transparente, más visible
+        refractive_index: 1.2, // Menos realista, más estilizado
+        texture: Some("assets/water.png".to_string()),
         normal_map_id: None,
     };
 
     // --- OBJETOS CAMBIADOS A CUBOS ---
     let objects = [
         Cube::new(
-            Vector3::new(0.0, 0.0, 0.0),
-            2.0, // size = radius * 2
-            rubber.clone(),
-        ),
-        Cube::new(
-            Vector3::new(1.0, 1.0, 1.0),
+            Vector3::new(-5.0, 0.0, 0.0),
             1.0, // size = radius * 2
-            rubber.clone(),
+            diamond_ore.clone(),
         ),
         Cube::new(
-            Vector3::new(2.0, 0.0, -4.0),
-            2.0, // size = radius * 2
-            ivory,
-        ),
-        Cube::new(
-            Vector3::new(2.0, -0.5, -1.0),
-            1.4, // size = radius * 2
-            mirror,
-        ),
-        Cube::new(
-            Vector3::new(-1.5, 0.0, -1.0),
+            Vector3::new(-4.0, 0.0, 0.0),
             1.0, // size = radius * 2
-            glass,
+            dirt.clone(),
+        ),
+        Cube::new(
+            Vector3::new(-3.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            glass.clone(),
+        ),
+        Cube::new(
+            Vector3::new(-2.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            grass.clone(),
+        ),
+        Cube::new(
+            Vector3::new(-1.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            leaves.clone(),
+        ),
+        Cube::new(
+            Vector3::new(0.0, 0.0, 0.0), 
+            1.0, // size = radius * 2
+            oak.clone(),
+        ),
+        Cube::new(
+            Vector3::new(1.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            obsidian.clone(), //change
+        ),
+        Cube::new(
+            Vector3::new(2.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            stone.clone(),
+        ),
+        Cube::new(
+            Vector3::new(3.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            water.clone(), //change
+        ),
+        Cube::new(
+            Vector3::new(4.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            wood_planks.clone(),
+        ),
+        Cube::new(
+            Vector3::new(5.0, 0.0, 0.0),
+            1.0, // size = radius * 2
+            magma.clone(),
         ),
     ];
 
