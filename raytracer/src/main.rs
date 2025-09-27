@@ -3,21 +3,20 @@
 #![allow(dead_code)]
 use raylib::prelude::*;
 use std::f32::consts::PI;
-// Importamos los traits de Rayon para la paralelización
 use rayon::prelude::*;
 use std::mem::size_of;
 
 mod framebuffer;
 mod ray_intersect;
-mod cube; // Cambiado de sphere a cube
-mod camera;
+mod cube;
+mod camera; //poner sphere si se quiere usar esferas
 mod material;
 mod light;
 mod snell;
 mod textures;
 use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect};
-use cube::Cube; // Cambiado de Sphere a Cube
+use cube::Cube;
 use camera::Camera;
 use material::{Material, vector3_to_color};
 use light::Light;
@@ -46,7 +45,7 @@ fn procedural_sky(dir: Vector3) -> Vector3 {
 fn cast_shadow(
     intersect: &Intersect,
     light: &Light,
-    objects: &[Cube], // Cambiado de Sphere a Cube
+    objects: &[Cube], //poner sphere si se quiere usar esferas
 ) -> f32 {
     let light_direction = (light.position - intersect.point).normalized();
     let shadow_ray_origin = intersect.point + intersect.normal * 0.001; // Bias para evitar auto-intersección
@@ -72,12 +71,12 @@ fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
 pub fn cast_ray(
     ray_origin: &Vector3,
     ray_direction: &Vector3,
-    objects: &[Cube], // Cambiado de Sphere a Cube
+    objects: &[Cube], //poner sphere si se quiere usar esferas
     light: &Light,
     depth: u32,
     texture_manager: &TextureManager,
 ) -> Vector3 {
-    if depth > 1 { // Reducir profundidad para mejor rendimiento con tamaño original
+    if depth > 1 { // Originalmente era 3, reducido para mejor rendimiento
         return procedural_sky(*ray_direction);
     }
     
@@ -166,9 +165,7 @@ pub fn cast_ray(
     color
 }
 
-/// **FUNCIÓN OPTIMIZADA**
-/// Renderiza la escena en paralelo usando múltiples hilos.
-/// Devuelve un vector de colores de píxeles que se pueden cargar en el framebuffer.
+/// Renderiza la escena en paralelo usando múltiples hilos. Devuelve un vector de colores de píxeles que se pueden cargar en el framebuffer.
 pub fn render(
     width: i32,
     height: i32,
@@ -181,8 +178,7 @@ pub fn render(
     let fov = PI / 3.0;
     let perspective_scale = (fov * 0.5).tan();
     
-    // Genera un iterador paralelo para las filas de píxeles (y).
-    // flat_map crea un nuevo iterador paralelo para cada píxel (x, y) en la pantalla.
+    // Genera un iterador paralelo para las filas de píxeles (y). flat_map crea un nuevo iterador paralelo para cada píxel (x, y) en la pantalla.
     (0..height)
         .into_par_iter()
         .flat_map(|y| (0..width).into_par_iter().map(move |x| (x, y)))
@@ -208,16 +204,15 @@ pub fn render(
 }
 
 fn main() {
-    let window_width = 1300; 
-    let window_height = 900; 
+    let window_width = 800; //1300 para tamaño mas grande con menos fps
+    let window_height = 600; //900 para tamaño mas grande con menos fps
     let (mut window, raylib_thread) = raylib::init()
         .size(window_width, window_height)
         .title("Raytracer Class - Cubes (Optimized)")
         .log_level(TraceLogLevel::LOG_WARNING)
         .build();
-    
-    // Limitar a 15 FPS para manejar el tamaño mayor
-    window.set_target_fps(15);
+
+    window.set_target_fps(30);
     
     let mut texture_manager = TextureManager::new();
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/bricks_normal.png");
@@ -303,19 +298,20 @@ fn main() {
         Cube::new(Vector3::new(5.0, 0.0, 0.0), 1.0, magma.clone()),
     ];
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 5.0),
-        Vector3::new(0.0, 0.0, 0.0),
-        Vector3::new(0.0, 1.0, 0.0),
+        Vector3::new(0.0, 0.0, 8.0), //Posicion de la camara
+        Vector3::new(0.0, 0.0, 0.0), //Donde mira la camara
+        Vector3::new(0.0, 1.0, 0.0), //Donde esta arriba
     );
     let rotation_speed = PI / 100.0;
     let zoom_speed = 0.1;
+    let vertical_speed = 0.1;
     let light = Light::new(
-        Vector3::new(5.0, 5.0, 5.0),
-        Vector3::new(1.0, 1.0, 1.0),
-        1.5,
+        Vector3::new(5.0, 5.0, 5.0), //Posicion de la luz
+        Vector3::new(1.0, 1.0, 1.0), //Color de la luz
+        1.5, //Intensidad de la luz
     );
 
-    // **OPTIMIZACIÓN:** Creamos la textura una sola vez, fuera del bucle principal.
+    //Creamos la textura una sola vez, fuera del bucle principal.
     let mut texture = window
         .load_texture_from_image(&raylib_thread, &Image::gen_image_color(window_width, window_height, Color::BLACK))
         .expect("No se pudo cargar la textura desde el framebuffer");
@@ -323,12 +319,22 @@ fn main() {
     while !window.window_should_close() {
         let start_time = std::time::Instant::now();
         
-        if window.is_key_down(KeyboardKey::KEY_LEFT) { camera.orbit(rotation_speed, 0.0); }
-        if window.is_key_down(KeyboardKey::KEY_RIGHT) { camera.orbit(-rotation_speed, 0.0); }
-        if window.is_key_down(KeyboardKey::KEY_UP) { camera.orbit(0.0, -rotation_speed); }
-        if window.is_key_down(KeyboardKey::KEY_DOWN) { camera.orbit(0.0, rotation_speed); }
-        if window.is_key_down(KeyboardKey::KEY_W) { camera.zoom(zoom_speed); }
-        if window.is_key_down(KeyboardKey::KEY_S) { camera.zoom(-zoom_speed); }
+        if window.is_key_down(KeyboardKey::KEY_LEFT) { camera.orbit(rotation_speed, 0.0); } // left
+        if window.is_key_down(KeyboardKey::KEY_RIGHT) { camera.orbit(-rotation_speed, 0.0); } // right
+        if window.is_key_down(KeyboardKey::KEY_UP) { camera.orbit(0.0, -rotation_speed); } // up
+        if window.is_key_down(KeyboardKey::KEY_DOWN) { camera.orbit(0.0, rotation_speed); } // down
+        if window.is_key_down(KeyboardKey::KEY_D) { camera.zoom(zoom_speed); } //Zoom +
+        if window.is_key_down(KeyboardKey::KEY_A) { camera.zoom(-zoom_speed); } //Zoom -
+        if window.is_key_down(KeyboardKey::KEY_W) { // up
+            camera.eye.y += vertical_speed; 
+            camera.center.y += vertical_speed;
+            camera.update_basis(); 
+        }
+        if window.is_key_down(KeyboardKey::KEY_S) { // down
+            camera.eye.y -= vertical_speed; 
+            camera.center.y -= vertical_speed;
+            camera.update_basis(); 
+        }
         
         // 1. Llama a la función de renderizado en paralelo.
         let pixel_data = render(
@@ -340,8 +346,7 @@ fn main() {
             &texture_manager,
         );
         
-        // 2. **CORRECCIÓN:** Actualizamos la textura de forma segura
-        // Convertimos el vector de colores a un slice de bytes de forma segura
+        // 2. Actualizamos la textura de forma segura. Convertimos el vector de colores a un slice de bytes de forma segura
         let pixel_bytes: &[u8] = unsafe {
             std::slice::from_raw_parts(
                 pixel_data.as_ptr() as *const u8,
@@ -367,8 +372,8 @@ fn main() {
                 10, // Posición X
                 10, // Posición Y
                 20, // Tamaño de fuente
-                Color::WHITE, // Color del texto
+                Color::BLACK, // Color del texto
             );
-        } // El dibujado termina aquí cuando `d` se destruye.
+        }
     }
 }

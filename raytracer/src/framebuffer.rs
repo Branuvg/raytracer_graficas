@@ -40,7 +40,5 @@ impl Framebuffer {
     pub fn set_current_color(&mut self, color: Color) {
         self.current_color = color;
     }
-    // La función `swap_buffers` se ha eliminado. La lógica de dibujado ahora
-    // está en el bucle principal de `main.rs` para permitir dibujar el texto
-    // de los FPS encima de la imagen renderizada.
+    // La función `swap_buffers` se ha eliminado. La lógica de dibujado ahora está en el bucle principal de `main.rs` para permitir dibujar el texto de los FPS encima de la imagen renderizada.
 }
