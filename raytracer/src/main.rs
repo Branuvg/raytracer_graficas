@@ -5,6 +5,7 @@ use raylib::prelude::*;
 use std::f32::consts::PI;
 // Importamos los traits de Rayon para la paralelización
 use rayon::prelude::*;
+use std::mem::size_of;
 
 mod framebuffer;
 mod ray_intersect;
@@ -305,6 +306,12 @@ fn main() {
         Vector3::new(1.0, 1.0, 1.0),
         1.5,
     );
+
+    // **OPTIMIZACIÓN:** Creamos la textura una sola vez, fuera del bucle principal.
+    let mut texture = window
+        .load_texture_from_image(&raylib_thread, &framebuffer.color_buffer)
+        .expect("No se pudo cargar la textura desde el framebuffer");
+
     while !window.window_should_close() {
         if window.is_key_down(KeyboardKey::KEY_LEFT) { camera.orbit(rotation_speed, 0.0); }
         if window.is_key_down(KeyboardKey::KEY_RIGHT) { camera.orbit(-rotation_speed, 0.0); }
@@ -313,7 +320,6 @@ fn main() {
         if window.is_key_down(KeyboardKey::KEY_W) { camera.zoom(zoom_speed); }
         if window.is_key_down(KeyboardKey::KEY_S) { camera.zoom(-zoom_speed); }
         
-        // **NUEVO FLUJO DE RENDERIZADO**
         // 1. Llama a la función de renderizado en paralelo.
         let pixel_data = render(
             framebuffer.width,
@@ -324,27 +330,24 @@ fn main() {
             &texture_manager,
         );
         
-        // 2. **CORRECCIÓN:** Copia los datos de píxeles calculados al buffer de la imagen del framebuffer.
-        // Esto es `unsafe` porque estamos trabajando con punteros crudos, pero es seguro
-        // siempre que `pixel_data` tenga el mismo número de píxeles que el buffer de la imagen.
-        unsafe {
-            let dest_ptr = framebuffer.color_buffer.data as *mut Color;
-            std::ptr::copy_nonoverlapping(
-                pixel_data.as_ptr(),
-                dest_ptr,
-                pixel_data.len(),
-            );
-        }
-        
-        // 3. Carga la imagen actualizada en una textura de la GPU.
-        let texture = window
-            .load_texture_from_image(&raylib_thread, &framebuffer.color_buffer)
-            .expect("No se pudo cargar la textura desde el framebuffer");
+        // 2. **OPTIMIZACIÓN:** Convertimos el vector de colores a un slice de bytes.
+        // La estructura `Color` de Raylib es `repr(C)`, por lo que esta conversión es segura.
+        let pixel_bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                pixel_data.as_ptr() as *const u8,
+                pixel_data.len() * size_of::<Color>(),
+            )
+        };
+
+        // 3. **OPTIMIZACIÓN Y CORRECCIÓN:** Actualizamos la textura existente en la GPU con los nuevos datos.
+        // El nombre correcto del método es `update_texture`.
+        let _ = texture.update_texture(pixel_bytes);
         
         // 4. Inicia el dibujado en pantalla.
         {
             let mut d = window.begin_drawing(&raylib_thread);
             d.clear_background(Color::BLACK);
+            // Dibujamos la textura que acabamos de actualizar.
             d.draw_texture(&texture, 0, 0, Color::WHITE);
             
             // 5. Dibuja el contador de FPS.
@@ -353,9 +356,8 @@ fn main() {
                 10, // Posición X
                 10, // Posición Y
                 20, // Tamaño de fuente
-                Color::LIME, // Color del texto
+                Color::BLACK, // Color del texto
             );
         } // El dibujado termina aquí cuando `d` se destruye.
     }
 }
-
