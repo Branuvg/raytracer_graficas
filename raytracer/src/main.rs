@@ -1,9 +1,10 @@
 // src/main.rs
 #![allow(unused_imports)]
 #![allow(dead_code)]
-
 use raylib::prelude::*;
 use std::f32::consts::PI;
+// Importamos los traits de Rayon para la paralelización
+use rayon::prelude::*;
 
 mod framebuffer;
 mod ray_intersect;
@@ -13,7 +14,6 @@ mod material;
 mod light;
 mod snell;
 mod textures;
-
 use framebuffer::Framebuffer;
 use ray_intersect::{RayIntersect, Intersect};
 use cube::Cube; // Cambiado de Sphere a Cube
@@ -26,11 +26,9 @@ use textures::TextureManager;
 fn procedural_sky(dir: Vector3) -> Vector3 {
     let d = dir.normalized();
     let t = (d.y + 1.0) * 0.5;
-
     let green = Vector3::new(0.1, 0.6, 0.2);
     let white = Vector3::new(1.0, 1.0, 1.0);
     let blue = Vector3::new(0.3, 0.5, 1.0);
-
     if t < 0.54 {
         let k = t / 0.55;
         green * (1.0 - k) + white * k
@@ -43,7 +41,6 @@ fn procedural_sky(dir: Vector3) -> Vector3 {
         blue
     }
 }
-
 fn cast_shadow(
     intersect: &Intersect,
     light: &Light,
@@ -51,7 +48,6 @@ fn cast_shadow(
 ) -> f32 {
     let light_direction = (light.position - intersect.point).normalized();
     let shadow_ray_origin = intersect.point;
-
     for object in objects {
         let shadow_intersect = object.ray_intersect(&shadow_ray_origin, &light_direction);
         if shadow_intersect.is_intersecting {
@@ -60,7 +56,6 @@ fn cast_shadow(
     }
     0.0
 }
-
 const ORIGIN_BIAS: f32 = 1e-4;
 fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
     let offset = intersect.normal * ORIGIN_BIAS;
@@ -70,7 +65,6 @@ fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
         intersect.point + offset
     }
 }
-
 pub fn cast_ray(
     ray_origin: &Vector3,
     ray_direction: &Vector3,
@@ -82,10 +76,8 @@ pub fn cast_ray(
     if depth > 3 {
         return procedural_sky(*ray_direction);
     }
-
     let mut intersect = Intersect::empty();
     let mut zbuffer = f32::INFINITY;
-
     for object in objects {
         let tmp = object.ray_intersect(ray_origin, ray_direction);
         if tmp.is_intersecting {
@@ -95,7 +87,6 @@ pub fn cast_ray(
             }
         }
     }
-
     if !intersect.is_intersecting {
         return procedural_sky(*ray_direction);
     }
@@ -122,7 +113,6 @@ pub fn cast_ray(
             normal = Vector3::new(transformed_normal_x, transformed_normal_y, transformed_normal_z).normalized();
         }
     }
-
     let reflection_direction = reflect(&-light_direction, &normal).normalized();
     
     let shadow_intensity = cast_shadow(&intersect, light, objects);
@@ -130,7 +120,6 @@ pub fn cast_ray(
     
     // Difuso
     let diffuse_intensity = normal.dot(light_direction).max(0.0) * light_intensity;
-
     let diffuse_color = if let Some(texture_path) = &intersect.material.texture {
         let texture = texture_manager.get_texture(texture_path).unwrap();
         let width = texture.width() as u32;
@@ -142,7 +131,6 @@ pub fn cast_ray(
     } else {
         intersect.material.diffuse
     };
-
     let diffuse = diffuse_color * diffuse_intensity;
     
     // Especular
@@ -152,67 +140,74 @@ pub fn cast_ray(
     // Reflejo
     let mut reflection_color = procedural_sky(*ray_direction);
     let reflectivity = intersect.material.reflectivity;
-
     if reflectivity > 0.0 {
         let reflect_direction = reflect(ray_direction, &normal);
         let reflect_origin = intersect.point;
         reflection_color = cast_ray(&reflect_origin, &reflect_direction, objects, light, depth + 1, texture_manager);
     }
-
     //Transparencia
     let transparency = intersect.material.transparency;
     let mut refraction_color = Vector3::zero();
-
     if transparency > 0.0 {
         let refract_direction = refract(ray_direction, &normal, intersect.material.refractive_index);
         let refract_origin = offset_origin(&intersect, &refract_direction);
-
         refraction_color = cast_ray(&refract_origin, &refract_direction, objects, light, depth + 1, texture_manager);
     }
-
     // Color final
     let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1] + reflection_color * reflectivity + refraction_color * transparency;
-
     color
 }
 
-pub fn render(framebuffer: &mut Framebuffer, objects: &[Cube], camera: &Camera, light: &Light, texture_manager: &TextureManager) { // Cambiado de Sphere a Cube
-
-    let width = framebuffer.width as f32;
-    let height = framebuffer.height as f32;
-    let aspect_ratio = width / height;
+/// **FUNCIÓN OPTIMIZADA**
+/// Renderiza la escena en paralelo usando múltiples hilos.
+/// Devuelve un vector de colores de píxeles que se pueden cargar en el framebuffer.
+pub fn render(
+    width: i32,
+    height: i32,
+    objects: &[Cube],
+    camera: &Camera,
+    light: &Light,
+    texture_manager: &TextureManager,
+) -> Vec<Color> {
+    let aspect_ratio = width as f32 / height as f32;
     let fov = PI / 3.0;
     let perspective_scale = (fov * 0.5).tan();
-
-    for y in 0..framebuffer.height {
-        for x in 0..framebuffer.width {
-            let screen_x = (2.0 * x as f32) / width - 1.0;
-            let screen_y = -(2.0 * y as f32) / height + 1.0;
-
+    // Genera un iterador paralelo para las filas de píxeles (y).
+    // flat_map crea un nuevo iterador paralelo para cada píxel (x, y) en la pantalla.
+    (0..height)
+        .into_par_iter()
+        .flat_map(|y| (0..width).into_par_iter().map(move |x| (x, y)))
+        .map(|(x, y)| {
+            // El cálculo para cada píxel es el mismo que antes.
+            let screen_x = (2.0 * x as f32) / width as f32 - 1.0;
+            let screen_y = -(2.0 * y as f32) / height as f32 + 1.0;
             let screen_x = screen_x * aspect_ratio * perspective_scale;
             let screen_y = screen_y * perspective_scale;
-
             let ray_direction = Vector3::new(screen_x, screen_y, -1.0).normalized();
             let rotated_direction = camera.basis_change(&ray_direction);
-            let pixel_color_vec = cast_ray(&camera.eye, &rotated_direction, objects, light, 0, texture_manager);
-            let pixel_color = vector3_to_color(pixel_color_vec);
-
-            framebuffer.set_current_color(pixel_color);
-            framebuffer.set_pixel(x, y);
-        }
-    }
+            let pixel_color_vec = cast_ray(
+                &camera.eye,
+                &rotated_direction,
+                objects,
+                light,
+                0,
+                texture_manager,
+            );
+            vector3_to_color(pixel_color_vec)
+        })
+        .collect() // Recolecta los resultados de todos los hilos en un solo Vec<Color>.
 }
 
 fn main() {
     let window_width = 1300;
     let window_height = 900;
-
     let (mut window, raylib_thread) = raylib::init()
         .size(window_width, window_height)
-        .title("Raytracer Class - Cubes")
+        .title("Raytracer Class - Cubes (Optimized)")
         .log_level(TraceLogLevel::LOG_WARNING)
         .build();
-
+    // Hacemos que la ventana intente correr a 60 FPS, aunque el renderizado puede tardar más.
+    window.set_target_fps(60);
     let mut texture_manager = TextureManager::new();
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/bricks_normal.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/grass.png");
@@ -226,222 +221,78 @@ fn main() {
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/water.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/leaves.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/dirt.png");
-
-    let mut framebuffer = Framebuffer::new(window_width as i32, window_height as i32);
-
-/*     let rubber = Material {
-        diffuse: Vector3::new(0.3, 0.1, 0.1),
-        albedo: [0.9,0.1],
-        specular: 5.0,
-        reflectivity: 0.0,
-        transparency: 0.0,
-        refractive_index: 0.0,
-        texture: None,
-        normal_map_id: None,
-    }; */
     
-/*     let ivory = Material {
-        diffuse: Vector3::new(0.4, 0.4, 0.3),
-        albedo: [0.6,0.3],
-        specular: 50.0,
-        reflectivity: 0.3,
-        transparency: 0.0,
-        refractive_index: 0.0,
-        texture: None,
-        normal_map_id: None,
-    }; */
+    let framebuffer = Framebuffer::new(window_width as i32, window_height as i32);
     
-/*     let mirror = Material {
-        diffuse: Vector3::new(1.0, 1.0, 1.0),
-        albedo: [0.0,10.0],
-        specular: 1500.0,
-        reflectivity: 0.9,
-        transparency: 0.1,
-        refractive_index: 1.5,
-        texture: None,
-        normal_map_id: None,
-    }; */
-
     let glass = Material {
-        diffuse: Vector3::new(1.0, 1.0, 1.0),
-        albedo: [0.0,5.0],
-        specular: 125.0,
-        reflectivity: 0.1,
-        transparency: 0.9,
-        refractive_index: 1.5,
-        texture: Some("assets/glass.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(1.0, 1.0, 1.0), albedo: [0.0,5.0], specular: 125.0,
+        reflectivity: 0.1, transparency: 0.9, refractive_index: 1.5,
+        texture: Some("assets/glass.png".to_string()), normal_map_id: None,
     };
-    
     let dirt = Material {
-        diffuse: Vector3::new(0.4, 0.26, 0.13), // Color marrón tierra
-        albedo: [0.8, 0.2],
-        specular: 1.0,
-        reflectivity: 0.0,
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/dirt.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.4, 0.26, 0.13), albedo: [0.8, 0.2], specular: 1.0,
+        reflectivity: 0.0, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/dirt.png".to_string()), normal_map_id: None,
     };
-
     let grass = Material {
-        diffuse: Vector3::new(0.2, 0.6, 0.2), // Verde hierba
-        albedo: [0.7, 0.3],
-        specular: 2.0,
-        reflectivity: 0.05,
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/grass.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.2, 0.6, 0.2), albedo: [0.7, 0.3], specular: 2.0,
+        reflectivity: 0.05, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/grass.png".to_string()), normal_map_id: None,
     };
-
     let leaves = Material {
-        diffuse: Vector3::new(0.1, 0.5, 0.1), // Verde hoja más oscuro
-        albedo: [0.6, 0.4],
-        specular: 3.0,
-        reflectivity: 0.02,
-        transparency: 0.3, // Ligeramente transparentes
-        refractive_index: 1.2,
-        texture: Some("assets/leaves.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.1, 0.5, 0.1), albedo: [0.6, 0.4], specular: 3.0,
+        reflectivity: 0.02, transparency: 0.3, refractive_index: 1.2,
+        texture: Some("assets/leaves.png".to_string()), normal_map_id: None,
     };
-
     let magma = Material {
-        diffuse: Vector3::new(1.0, 0.3, 0.0), // Rojo-naranja intenso
-        albedo: [0.9, 0.1],
-        specular: 50.0, // Muy brillante
-        reflectivity: 0.2,
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/magma.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(1.0, 0.3, 0.0), albedo: [0.9, 0.1], specular: 50.0,
+        reflectivity: 0.2, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/magma.png".to_string()), normal_map_id: None,
     };
-
     let oak = Material {
-        diffuse: Vector3::new(0.6, 0.4, 0.2), // Marrón madera
-        albedo: [0.8, 0.2],
-        specular: 5.0,
-        reflectivity: 0.0,
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/oak.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.6, 0.4, 0.2), albedo: [0.8, 0.2], specular: 5.0,
+        reflectivity: 0.0, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/oak.png".to_string()), normal_map_id: None,
     };
-
     let wood_planks = Material {
-        diffuse: Vector3::new(0.6, 0.4, 0.2), // Marrón madera
-        albedo: [0.8, 0.2],
-        specular: 5.0,
-        reflectivity: 0.0,
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/wood_planks.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.6, 0.4, 0.2), albedo: [0.8, 0.2], specular: 5.0,
+        reflectivity: 0.0, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/wood_planks.png".to_string()), normal_map_id: None,
     };
-
     let stone = Material {
-        diffuse: Vector3::new(0.5, 0.5, 0.5), // Gris piedra
-        albedo: [0.7, 0.3],
-        specular: 8.0,
-        reflectivity: 0.05,
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/stone.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.5, 0.5, 0.5), albedo: [0.7, 0.3], specular: 8.0,
+        reflectivity: 0.05, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/stone.png".to_string()), normal_map_id: None,
     };
-
     let diamond_ore = Material {
-        diffuse: Vector3::new(0.4, 0.4, 0.4), // Gris piedra base
-        albedo: [0.5, 0.5], // Balance entre color propio y reflexión
-        specular: 80.0, // Bastante brillante por los diamantes incrustados
-        reflectivity: 0.3, // Moderadamente reflectivo
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/diamond_ore.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.4, 0.4, 0.4), albedo: [0.5, 0.5], specular: 80.0,
+        reflectivity: 0.3, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/diamond_ore.png".to_string()), normal_map_id: None,
     };
-
     let obsidian = Material {
-        diffuse: Vector3::new(0.1, 0.05, 0.15), // Negro con tinte púrpura sutil
-        albedo: [0.8, 0.2],
-        specular: 10.0, // Menos brillante, más mate
-        reflectivity: 0.1, // Menos reflectivo
-        transparency: 0.0,
-        refractive_index: 1.0,
-        texture: Some("assets/obsidian.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.1, 0.05, 0.15), albedo: [0.8, 0.2], specular: 10.0,
+        reflectivity: 0.1, transparency: 0.0, refractive_index: 1.0,
+        texture: Some("assets/obsidian.png".to_string()), normal_map_id: None,
     };
-    
     let water = Material {
-        diffuse: Vector3::new(0.0, 0.3, 0.9), // Azul más vibrante y saturado
-        albedo: [0.6, 0.4],
-        specular: 30.0, // Menos brillante que vidrio
-        reflectivity: 0.15, // Menos reflectivo
-        transparency: 0.6, // Menos transparente, más visible
-        refractive_index: 1.2, // Menos realista, más estilizado
-        texture: Some("assets/water.png".to_string()),
-        normal_map_id: None,
+        diffuse: Vector3::new(0.0, 0.3, 0.9), albedo: [0.6, 0.4], specular: 30.0,
+        reflectivity: 0.15, transparency: 0.6, refractive_index: 1.2,
+        texture: Some("assets/water.png".to_string()), normal_map_id: None,
     };
 
-    // --- OBJETOS CAMBIADOS A CUBOS ---
     let objects = [
-        Cube::new(
-            Vector3::new(-5.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            diamond_ore.clone(),
-        ),
-        Cube::new(
-            Vector3::new(-4.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            dirt.clone(),
-        ),
-        Cube::new(
-            Vector3::new(-3.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            glass.clone(),
-        ),
-        Cube::new(
-            Vector3::new(-2.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            grass.clone(),
-        ),
-        Cube::new(
-            Vector3::new(-1.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            leaves.clone(),
-        ),
-        Cube::new(
-            Vector3::new(0.0, 0.0, 0.0), 
-            1.0, // size = radius * 2
-            oak.clone(),
-        ),
-        Cube::new(
-            Vector3::new(1.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            obsidian.clone(), //change
-        ),
-        Cube::new(
-            Vector3::new(2.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            stone.clone(),
-        ),
-        Cube::new(
-            Vector3::new(3.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            water.clone(), //change
-        ),
-        Cube::new(
-            Vector3::new(4.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            wood_planks.clone(),
-        ),
-        Cube::new(
-            Vector3::new(5.0, 0.0, 0.0),
-            1.0, // size = radius * 2
-            magma.clone(),
-        ),
+        Cube::new(Vector3::new(-5.0, 0.0, 0.0), 1.0, diamond_ore.clone()),
+        Cube::new(Vector3::new(-4.0, 0.0, 0.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, 0.0), 1.0, glass.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, 0.0), 1.0, grass.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, 0.0), 1.0, leaves.clone()),
+        Cube::new(Vector3::new(0.0, 0.0, 0.0),  1.0, oak.clone()),
+        Cube::new(Vector3::new(1.0, 0.0, 0.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(2.0, 0.0, 0.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(3.0, 0.0, 0.0), 1.0, water.clone()),
+        Cube::new(Vector3::new(4.0, 0.0, 0.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(5.0, 0.0, 0.0), 1.0, magma.clone()),
     ];
-
     let mut camera = Camera::new(
         Vector3::new(0.0, 0.0, 5.0),
         Vector3::new(0.0, 0.0, 0.0),
@@ -449,25 +300,62 @@ fn main() {
     );
     let rotation_speed = PI / 100.0;
     let zoom_speed = 0.1;
-
     let light = Light::new(
         Vector3::new(5.0, 5.0, 5.0),
         Vector3::new(1.0, 1.0, 1.0),
         1.5,
     );
-
     while !window.window_should_close() {
-        framebuffer.clear();
-
         if window.is_key_down(KeyboardKey::KEY_LEFT) { camera.orbit(rotation_speed, 0.0); }
         if window.is_key_down(KeyboardKey::KEY_RIGHT) { camera.orbit(-rotation_speed, 0.0); }
         if window.is_key_down(KeyboardKey::KEY_UP) { camera.orbit(0.0, -rotation_speed); }
         if window.is_key_down(KeyboardKey::KEY_DOWN) { camera.orbit(0.0, rotation_speed); }
         if window.is_key_down(KeyboardKey::KEY_W) { camera.zoom(zoom_speed); }
         if window.is_key_down(KeyboardKey::KEY_S) { camera.zoom(-zoom_speed); }
-
-        render(&mut framebuffer, &objects, &camera, &light, &texture_manager);
         
-        framebuffer.swap_buffers(&mut window, &raylib_thread);
+        // **NUEVO FLUJO DE RENDERIZADO**
+        // 1. Llama a la función de renderizado en paralelo.
+        let pixel_data = render(
+            framebuffer.width,
+            framebuffer.height,
+            &objects,
+            &camera,
+            &light,
+            &texture_manager,
+        );
+        
+        // 2. **CORRECCIÓN:** Copia los datos de píxeles calculados al buffer de la imagen del framebuffer.
+        // Esto es `unsafe` porque estamos trabajando con punteros crudos, pero es seguro
+        // siempre que `pixel_data` tenga el mismo número de píxeles que el buffer de la imagen.
+        unsafe {
+            let dest_ptr = framebuffer.color_buffer.data as *mut Color;
+            std::ptr::copy_nonoverlapping(
+                pixel_data.as_ptr(),
+                dest_ptr,
+                pixel_data.len(),
+            );
+        }
+        
+        // 3. Carga la imagen actualizada en una textura de la GPU.
+        let texture = window
+            .load_texture_from_image(&raylib_thread, &framebuffer.color_buffer)
+            .expect("No se pudo cargar la textura desde el framebuffer");
+        
+        // 4. Inicia el dibujado en pantalla.
+        {
+            let mut d = window.begin_drawing(&raylib_thread);
+            d.clear_background(Color::BLACK);
+            d.draw_texture(&texture, 0, 0, Color::WHITE);
+            
+            // 5. Dibuja el contador de FPS.
+            d.draw_text(
+                &format!("FPS: {}", d.get_fps()),
+                10, // Posición X
+                10, // Posición Y
+                20, // Tamaño de fuente
+                Color::LIME, // Color del texto
+            );
+        } // El dibujado termina aquí cuando `d` se destruye.
     }
 }
+
