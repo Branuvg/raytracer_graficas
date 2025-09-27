@@ -42,21 +42,23 @@ fn procedural_sky(dir: Vector3) -> Vector3 {
         blue
     }
 }
+
 fn cast_shadow(
     intersect: &Intersect,
     light: &Light,
     objects: &[Cube], // Cambiado de Sphere a Cube
 ) -> f32 {
     let light_direction = (light.position - intersect.point).normalized();
-    let shadow_ray_origin = intersect.point;
+    let shadow_ray_origin = intersect.point + intersect.normal * 0.001; // Bias para evitar auto-intersección
     for object in objects {
         let shadow_intersect = object.ray_intersect(&shadow_ray_origin, &light_direction);
-        if shadow_intersect.is_intersecting {
+        if shadow_intersect.is_intersecting && shadow_intersect.distance < (light.position - shadow_ray_origin).length() {
             return 0.7;
         }
     }
     0.0
 }
+
 const ORIGIN_BIAS: f32 = 1e-4;
 fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
     let offset = intersect.normal * ORIGIN_BIAS;
@@ -66,6 +68,7 @@ fn offset_origin(intersect: &Intersect, ray_direction: &Vector3) -> Vector3 {
         intersect.point + offset
     }
 }
+
 pub fn cast_ray(
     ray_origin: &Vector3,
     ray_direction: &Vector3,
@@ -74,20 +77,20 @@ pub fn cast_ray(
     depth: u32,
     texture_manager: &TextureManager,
 ) -> Vector3 {
-    if depth > 3 {
+    if depth > 1 { // Reducir profundidad para mejor rendimiento con tamaño original
         return procedural_sky(*ray_direction);
     }
+    
     let mut intersect = Intersect::empty();
     let mut zbuffer = f32::INFINITY;
     for object in objects {
         let tmp = object.ray_intersect(ray_origin, ray_direction);
-        if tmp.is_intersecting {
-            if tmp.distance < zbuffer {
-                zbuffer = tmp.distance;
-                intersect = tmp;
-            }
+        if tmp.is_intersecting && tmp.distance < zbuffer {
+            zbuffer = tmp.distance;
+            intersect = tmp;
         }
     }
+    
     if !intersect.is_intersecting {
         return procedural_sky(*ray_direction);
     }
@@ -114,6 +117,7 @@ pub fn cast_ray(
             normal = Vector3::new(transformed_normal_x, transformed_normal_y, transformed_normal_z).normalized();
         }
     }
+    
     let reflection_direction = reflect(&-light_direction, &normal).normalized();
     
     let shadow_intensity = cast_shadow(&intersect, light, objects);
@@ -139,23 +143,26 @@ pub fn cast_ray(
     let specular = light.color * specular_intensity;
     
     // Reflejo
-    let mut reflection_color = procedural_sky(*ray_direction);
+    let mut reflection_color = Vector3::zero(); // Cambiado para rendimiento
     let reflectivity = intersect.material.reflectivity;
     if reflectivity > 0.0 {
         let reflect_direction = reflect(ray_direction, &normal);
-        let reflect_origin = intersect.point;
+        let reflect_origin = offset_origin(&intersect, &reflect_direction);
         reflection_color = cast_ray(&reflect_origin, &reflect_direction, objects, light, depth + 1, texture_manager);
     }
-    //Transparencia
+    
+    // Transparencia
     let transparency = intersect.material.transparency;
-    let mut refraction_color = Vector3::zero();
+    let mut refraction_color = Vector3::zero(); // Cambiado para rendimiento
     if transparency > 0.0 {
         let refract_direction = refract(ray_direction, &normal, intersect.material.refractive_index);
         let refract_origin = offset_origin(&intersect, &refract_direction);
         refraction_color = cast_ray(&refract_origin, &refract_direction, objects, light, depth + 1, texture_manager);
     }
+    
     // Color final
-    let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1] + reflection_color * reflectivity + refraction_color * transparency;
+    let color = diffuse * intersect.material.albedo[0] + specular * intersect.material.albedo[1] + 
+                reflection_color * reflectivity + refraction_color * transparency;
     color
 }
 
@@ -173,6 +180,7 @@ pub fn render(
     let aspect_ratio = width as f32 / height as f32;
     let fov = PI / 3.0;
     let perspective_scale = (fov * 0.5).tan();
+    
     // Genera un iterador paralelo para las filas de píxeles (y).
     // flat_map crea un nuevo iterador paralelo para cada píxel (x, y) en la pantalla.
     (0..height)
@@ -200,15 +208,17 @@ pub fn render(
 }
 
 fn main() {
-    let window_width = 1300;
-    let window_height = 900;
+    let window_width = 1300; 
+    let window_height = 900; 
     let (mut window, raylib_thread) = raylib::init()
         .size(window_width, window_height)
         .title("Raytracer Class - Cubes (Optimized)")
         .log_level(TraceLogLevel::LOG_WARNING)
         .build();
-    // Hacemos que la ventana intente correr a 60 FPS, aunque el renderizado puede tardar más.
-    window.set_target_fps(60);
+    
+    // Limitar a 15 FPS para manejar el tamaño mayor
+    window.set_target_fps(15);
+    
     let mut texture_manager = TextureManager::new();
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/bricks_normal.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/grass.png");
@@ -222,8 +232,6 @@ fn main() {
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/water.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/leaves.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/dirt.png");
-    
-    let framebuffer = Framebuffer::new(window_width as i32, window_height as i32);
     
     let glass = Material {
         diffuse: Vector3::new(1.0, 1.0, 1.0), albedo: [0.0,5.0], specular: 125.0,
@@ -309,10 +317,12 @@ fn main() {
 
     // **OPTIMIZACIÓN:** Creamos la textura una sola vez, fuera del bucle principal.
     let mut texture = window
-        .load_texture_from_image(&raylib_thread, &framebuffer.color_buffer)
+        .load_texture_from_image(&raylib_thread, &Image::gen_image_color(window_width, window_height, Color::BLACK))
         .expect("No se pudo cargar la textura desde el framebuffer");
 
     while !window.window_should_close() {
+        let start_time = std::time::Instant::now();
+        
         if window.is_key_down(KeyboardKey::KEY_LEFT) { camera.orbit(rotation_speed, 0.0); }
         if window.is_key_down(KeyboardKey::KEY_RIGHT) { camera.orbit(-rotation_speed, 0.0); }
         if window.is_key_down(KeyboardKey::KEY_UP) { camera.orbit(0.0, -rotation_speed); }
@@ -322,16 +332,16 @@ fn main() {
         
         // 1. Llama a la función de renderizado en paralelo.
         let pixel_data = render(
-            framebuffer.width,
-            framebuffer.height,
+            window_width,
+            window_height,
             &objects,
             &camera,
             &light,
             &texture_manager,
         );
         
-        // 2. **OPTIMIZACIÓN:** Convertimos el vector de colores a un slice de bytes.
-        // La estructura `Color` de Raylib es `repr(C)`, por lo que esta conversión es segura.
+        // 2. **CORRECCIÓN:** Actualizamos la textura de forma segura
+        // Convertimos el vector de colores a un slice de bytes de forma segura
         let pixel_bytes: &[u8] = unsafe {
             std::slice::from_raw_parts(
                 pixel_data.as_ptr() as *const u8,
@@ -339,8 +349,7 @@ fn main() {
             )
         };
 
-        // 3. **OPTIMIZACIÓN Y CORRECCIÓN:** Actualizamos la textura existente en la GPU con los nuevos datos.
-        // El nombre correcto del método es `update_texture`.
+        // 3. Actualizamos la textura existente en la GPU con los nuevos datos.
         let _ = texture.update_texture(pixel_bytes);
         
         // 4. Inicia el dibujado en pantalla.
@@ -351,12 +360,14 @@ fn main() {
             d.draw_texture(&texture, 0, 0, Color::WHITE);
             
             // 5. Dibuja el contador de FPS.
+            let elapsed = start_time.elapsed().as_millis() as f32 / 1000.0;
+            let fps = if elapsed > 0.0 { (1.0 / elapsed).round() as i32 } else { 0 };
             d.draw_text(
-                &format!("FPS: {}", d.get_fps()),
+                &format!("FPS: {}", fps),
                 10, // Posición X
                 10, // Posición Y
                 20, // Tamaño de fuente
-                Color::BLACK, // Color del texto
+                Color::WHITE, // Color del texto
             );
         } // El dibujado termina aquí cuando `d` se destruye.
     }
