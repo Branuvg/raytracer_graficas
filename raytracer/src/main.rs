@@ -21,26 +21,7 @@ use camera::Camera;
 use material::{Material, vector3_to_color};
 use light::Light;
 use snell::{reflect, refract};
-use textures::TextureManager;
-
-fn procedural_sky(dir: Vector3) -> Vector3 {
-    let d = dir.normalized();
-    let t = (d.y + 1.0) * 0.5;
-    let green = Vector3::new(0.1, 0.6, 0.2);
-    let white = Vector3::new(1.0, 1.0, 1.0);
-    let blue = Vector3::new(0.3, 0.5, 1.0);
-    if t < 0.54 {
-        let k = t / 0.55;
-        green * (1.0 - k) + white * k
-    } else if t < 0.55 {
-        white
-    } else if t < 0.8 {
-        let k = (t - 0.55) / (0.25);
-        white * (1.0 - k) + blue * k
-    } else {
-        blue
-    }
-}
+use textures::{TextureManager, SkyboxTextures};
 
 fn cast_shadow(
     intersect: &Intersect,
@@ -80,7 +61,7 @@ pub fn cast_ray(
     texture_manager: &TextureManager,
 ) -> Vector3 {
     if depth > 1 { // Limitar profundidad para rendimiento
-        return procedural_sky(*ray_direction);
+        return texture_manager.sample_skybox(*ray_direction);
     }
     
     let mut intersect = Intersect::empty();
@@ -94,7 +75,7 @@ pub fn cast_ray(
     }
     
     if !intersect.is_intersecting {
-        return procedural_sky(*ray_direction);
+        return texture_manager.sample_skybox(*ray_direction);
     }
     
     // El material emite su propio color, que se suma a la luz reflejada.
@@ -248,8 +229,20 @@ fn main() {
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/water.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/leaves.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/dirt.png");
+
+    let skybox = SkyboxTextures {
+        front: "assets/skybox/front.png".to_string(),
+        back: "assets/skybox/back.png".to_string(),
+        left: "assets/skybox/left.png".to_string(),
+        right: "assets/skybox/right.png".to_string(),
+        top: "assets/skybox/top.png".to_string(),
+        bottom: "assets/skybox/bottom.png".to_string(),
+    };
+
+    texture_manager.load_skybox(&mut window, &raylib_thread, skybox);
     
     let zero_emission = Vector3::zero();
+
     let glass = Material {
         diffuse: Vector3::new(1.0, 1.0, 1.0), albedo: [0.0,5.0], specular: 125.0, reflectivity: 0.1, 
         transparency: 0.9, refractive_index: 1.5, texture: Some("assets/glass.png".to_string()), 
@@ -403,7 +396,7 @@ fn main() {
             
             let elapsed = start_time.elapsed().as_millis() as f32 / 1000.0;
             let fps = if elapsed > 0.0 { (1.0 / elapsed).round() as i32 } else { 0 };
-            d.draw_text(&format!("FPS: {}", fps), 10, 10, 20, Color::BLACK);
+            d.draw_text(&format!("FPS: {}", fps), 10, 10, 20, Color::WHITE);
         }
     }
 }
