@@ -265,12 +265,12 @@ fn main() {
     };
     let stone = Material {
         diffuse: Vector3::new(0.5, 0.5, 0.5), albedo: [0.7, 0.3], specular: 8.0,
-        reflectivity: 0.05, transparency: 0.0, refractive_index: 1.0,
+        reflectivity: 0.01, transparency: 0.0, refractive_index: 0.5,
         texture: Some("assets/stone.png".to_string()), normal_map_id: None,
     };
     let diamond_ore = Material {
-        diffuse: Vector3::new(0.4, 0.4, 0.4), albedo: [0.5, 0.5], specular: 80.0,
-        reflectivity: 0.3, transparency: 0.0, refractive_index: 1.0,
+        diffuse: Vector3::new(0.4, 0.4, 0.4), albedo: [0.6, 0.4], specular: 20.0,
+        reflectivity: 0.1, transparency: 0.0, refractive_index: 0.5,
         texture: Some("assets/diamond_ore.png".to_string()), normal_map_id: None,
     };
     let obsidian = Material {
@@ -285,20 +285,74 @@ fn main() {
     };
 
     let objects = [
-        Cube::new(Vector3::new(-5.0, 0.0, 0.0), 1.0, diamond_ore.clone()),
-        Cube::new(Vector3::new(-4.0, 0.0, 0.0), 1.0, dirt.clone()),
-        Cube::new(Vector3::new(-3.0, 0.0, 0.0), 1.0, glass.clone()),
-        Cube::new(Vector3::new(-2.0, 0.0, 0.0), 1.0, grass.clone()),
-        Cube::new(Vector3::new(-1.0, 0.0, 0.0), 1.0, leaves.clone()),
-        Cube::new(Vector3::new(0.0, 0.0, 0.0),  1.0, oak.clone()),
-        Cube::new(Vector3::new(1.0, 0.0, 0.0), 1.0, obsidian.clone()),
-        Cube::new(Vector3::new(2.0, 0.0, 0.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(3.0, 0.0, 0.0), 1.0, water.clone()),
-        Cube::new(Vector3::new(4.0, 0.0, 0.0), 1.0, wood_planks.clone()),
-        Cube::new(Vector3::new(5.0, 0.0, 0.0), 1.0, magma.clone()),
+        //left
+        //floor
+        Cube::new(Vector3::new(-6.0, 0.0, 1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-5.0, 0.0, 1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.0, 0.0, 1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, 1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, 1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-6.0, 0.0, 0.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.5, -0.5, -0.5), 2.0, water.clone()), //water
+        Cube::new(Vector3::new(-3.0, 0.0, 0.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, 0.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, 0.0), 1.0, obsidian.clone()), //obsidian
+        Cube::new(Vector3::new(-6.0, 0.0, -1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, -1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, -1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, -1.0), 1.0, obsidian.clone()), //obsidian
+        Cube::new(Vector3::new(-6.0, 0.0, -2.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-5.0, 0.0, -2.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.0, 0.0, -2.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, -2.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, -2.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-6.0, 0.0, -3.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-5.0, 0.0, -3.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.0, 0.0, -3.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, -3.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, -3.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-6.0, 0.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-5.0, 0.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.0, 0.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, -4.0), 1.0, magma.clone()), //magma
+        Cube::new(Vector3::new(-2.0, 0.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-5.0, 0.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.0, 0.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, -5.0), 1.0, stone.clone()),
+        //cave left
+        Cube::new(Vector3::new(-6.0, 1.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-6.0, 2.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-6.0, 3.0, -4.0), 1.0, stone.clone()),
+        // cave rigth
+        Cube::new(Vector3::new(-2.0, 1.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 2.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 3.0, -4.0), 1.0, stone.clone()),
+        //cave back
+        Cube::new(Vector3::new(-5.0, 1.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
+        Cube::new(Vector3::new(-5.0, 2.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.0, 1.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
+        Cube::new(Vector3::new(-4.0, 2.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
+        Cube::new(Vector3::new(-3.0, 1.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 2.0, -5.0), 1.0, stone.clone()),
+        //cave ceiling
+        Cube::new(Vector3::new(-5.0, 3.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-4.0, 3.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 3.0, -4.0), 1.0, stone.clone()),
+        //portal top
+        Cube::new(Vector3::new(-1.0, 4.0, 0.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(-1.0, 4.0, -1.0), 1.0, obsidian.clone()),
+        //porta side a
+        Cube::new(Vector3::new(-1.0, 1.0, 1.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(-1.0, 2.0, 1.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(-1.0, 3.0, 1.0), 1.0, obsidian.clone()),
+        //porta side b
+        Cube::new(Vector3::new(-1.0, 1.0, -2.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(-1.0, 2.0, -2.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(-1.0, 3.0, -2.0), 1.0, obsidian.clone()),
     ];
+    
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 8.0), //Posicion de la camara
+        Vector3::new(0.0, 5.0, 8.0), //Posicion de la camara
         Vector3::new(0.0, 0.0, 0.0), //Donde mira la camara
         Vector3::new(0.0, 1.0, 0.0), //Donde esta arriba
     );
