@@ -287,68 +287,68 @@ fn main() {
     let objects = [
         //left
         //floor
-        Cube::new(Vector3::new(-6.0, 0.0, 1.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-5.0, 0.0, 1.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-4.0, 0.0, 1.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-3.0, 0.0, 1.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-2.0, 0.0, 1.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-6.0, 0.0, 0.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-4.5, -0.5, -0.5), 2.0, water.clone()), //water
-        Cube::new(Vector3::new(-3.0, 0.0, 0.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, 1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-5.0, 0.0, 0.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.5, -0.5, -0.5), 2.0, water.clone()), //water
         Cube::new(Vector3::new(-2.0, 0.0, 0.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-1.0, 0.0, 0.0), 1.0, obsidian.clone()), //obsidian
-        Cube::new(Vector3::new(-6.0, 0.0, -1.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-3.0, 0.0, -1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, 0.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(0.0, 0.0, 0.0), 1.0, obsidian.clone()), //obsidian
+        Cube::new(Vector3::new(-5.0, 0.0, -1.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-2.0, 0.0, -1.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-1.0, 0.0, -1.0), 1.0, obsidian.clone()), //obsidian
-        Cube::new(Vector3::new(-6.0, 0.0, -2.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, -1.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(0.0, 0.0, -1.0), 1.0, obsidian.clone()), //obsidian
         Cube::new(Vector3::new(-5.0, 0.0, -2.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-4.0, 0.0, -2.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-3.0, 0.0, -2.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-2.0, 0.0, -2.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-6.0, 0.0, -3.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, -2.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-5.0, 0.0, -3.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-4.0, 0.0, -3.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-3.0, 0.0, -3.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-2.0, 0.0, -3.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-6.0, 0.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 0.0, -3.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-5.0, 0.0, -4.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-4.0, 0.0, -4.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-3.0, 0.0, -4.0), 1.0, magma.clone()), //magma
-        Cube::new(Vector3::new(-2.0, 0.0, -4.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-5.0, 0.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 0.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, -4.0), 1.0, magma.clone()), //magma
+        Cube::new(Vector3::new(-1.0, 0.0, -4.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-4.0, 0.0, -5.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-3.0, 0.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 0.0, -5.0), 1.0, stone.clone()),
         //cave left
-        Cube::new(Vector3::new(-6.0, 1.0, -4.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-6.0, 2.0, -4.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-6.0, 3.0, -4.0), 1.0, stone.clone()),
-        // cave rigth
-        Cube::new(Vector3::new(-2.0, 1.0, -4.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-2.0, 2.0, -4.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-2.0, 3.0, -4.0), 1.0, stone.clone()),
-        //cave back
-        Cube::new(Vector3::new(-5.0, 1.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
-        Cube::new(Vector3::new(-5.0, 2.0, -5.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-4.0, 1.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
-        Cube::new(Vector3::new(-4.0, 2.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
-        Cube::new(Vector3::new(-3.0, 1.0, -5.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(-3.0, 2.0, -5.0), 1.0, stone.clone()),
-        //cave ceiling
+        Cube::new(Vector3::new(-5.0, 1.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-5.0, 2.0, -4.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-5.0, 3.0, -4.0), 1.0, stone.clone()),
+        // cave rigth
+        Cube::new(Vector3::new(-1.0, 1.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 2.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-1.0, 3.0, -4.0), 1.0, stone.clone()),
+        //cave back
+        Cube::new(Vector3::new(-4.0, 1.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
+        Cube::new(Vector3::new(-4.0, 2.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-3.0, 1.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
+        Cube::new(Vector3::new(-3.0, 2.0, -5.0), 1.0, diamond_ore.clone()), //diamond_ore
+        Cube::new(Vector3::new(-2.0, 1.0, -5.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 2.0, -5.0), 1.0, stone.clone()),
+        //cave ceiling
         Cube::new(Vector3::new(-4.0, 3.0, -4.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-3.0, 3.0, -4.0), 1.0, stone.clone()),
+        Cube::new(Vector3::new(-2.0, 3.0, -4.0), 1.0, stone.clone()),
         //portal top
-        Cube::new(Vector3::new(-1.0, 4.0, 0.0), 1.0, obsidian.clone()),
-        Cube::new(Vector3::new(-1.0, 4.0, -1.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 4.0, 0.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 4.0, -1.0), 1.0, obsidian.clone()),
         //porta side a
-        Cube::new(Vector3::new(-1.0, 1.0, 1.0), 1.0, obsidian.clone()),
-        Cube::new(Vector3::new(-1.0, 2.0, 1.0), 1.0, obsidian.clone()),
-        Cube::new(Vector3::new(-1.0, 3.0, 1.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 1.0, 1.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 2.0, 1.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 3.0, 1.0), 1.0, obsidian.clone()),
         //porta side b
-        Cube::new(Vector3::new(-1.0, 1.0, -2.0), 1.0, obsidian.clone()),
-        Cube::new(Vector3::new(-1.0, 2.0, -2.0), 1.0, obsidian.clone()),
-        Cube::new(Vector3::new(-1.0, 3.0, -2.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 1.0, -2.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 2.0, -2.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 3.0, -2.0), 1.0, obsidian.clone()),
     ];
     
     let mut camera = Camera::new(
@@ -360,7 +360,7 @@ fn main() {
     let zoom_speed = 0.1;
     let vertical_speed = 0.1;
     let light = Light::new(
-        Vector3::new(5.0, 5.0, 5.0), //Posicion de la luz
+        Vector3::new(0.5, 5.0, 5.0), //Posicion de la luz
         Vector3::new(1.0, 1.0, 1.0), //Color de la luz
         1.5, //Intensidad de la luz
     );
@@ -382,7 +382,7 @@ fn main() {
         if window.is_key_down(KeyboardKey::KEY_W) { // up
             camera.eye.y += vertical_speed; 
             camera.center.y += vertical_speed;
-            camera.update_basis(); 
+            camera.update_basis();
         }
         if window.is_key_down(KeyboardKey::KEY_S) { // down
             camera.eye.y -= vertical_speed; 
