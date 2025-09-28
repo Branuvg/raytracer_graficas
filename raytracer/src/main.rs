@@ -25,7 +25,7 @@ use textures::TextureManager;
 
 fn procedural_sky(dir: Vector3) -> Vector3 { //color del fondo, si se quiere un color solido, usar SKYBOX_COLOR (ultima linea de esta función) y cambiar donde diga //color del fondo
     let d = dir.normalized();
-    let t = (d.y + 1.0) * 0.5; // map y [-1,1] → [0,1]
+    let t = (d.y + 1.0) * 0.5;
 
     let green = Vector3::new(0.1, 0.6, 0.2); // grass green
     let white = Vector3::new(1.0, 1.0, 1.0); // horizon haze
