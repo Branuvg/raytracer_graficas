@@ -1,6 +1,7 @@
 // light.rs
 use raylib::prelude::*;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Light {
     pub position: Vector3,
     pub color: Vector3,
