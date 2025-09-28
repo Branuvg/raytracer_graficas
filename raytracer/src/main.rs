@@ -296,11 +296,9 @@ fn main() {
         Cube::new(Vector3::new(-3.5, -0.5, -0.5), 2.0, water.clone()), //water
         Cube::new(Vector3::new(-2.0, 0.0, 0.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-1.0, 0.0, 0.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(0.0, 0.0, 0.0), 1.0, obsidian.clone()), //obsidian
         Cube::new(Vector3::new(-5.0, 0.0, -1.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-2.0, 0.0, -1.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-1.0, 0.0, -1.0), 1.0, stone.clone()),
-        Cube::new(Vector3::new(0.0, 0.0, -1.0), 1.0, obsidian.clone()), //obsidian
         Cube::new(Vector3::new(-5.0, 0.0, -2.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-4.0, 0.0, -2.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-3.0, 0.0, -2.0), 1.0, stone.clone()),
@@ -338,18 +336,85 @@ fn main() {
         Cube::new(Vector3::new(-4.0, 3.0, -4.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-3.0, 3.0, -4.0), 1.0, stone.clone()),
         Cube::new(Vector3::new(-2.0, 3.0, -4.0), 1.0, stone.clone()),
+
         //portal top
         Cube::new(Vector3::new(0.0, 4.0, 0.0), 1.0, obsidian.clone()),
         Cube::new(Vector3::new(0.0, 4.0, -1.0), 1.0, obsidian.clone()),
-        //porta side a
+        //portal side a
         Cube::new(Vector3::new(0.0, 1.0, 1.0), 1.0, obsidian.clone()),
         Cube::new(Vector3::new(0.0, 2.0, 1.0), 1.0, obsidian.clone()),
         Cube::new(Vector3::new(0.0, 3.0, 1.0), 1.0, obsidian.clone()),
-        //porta side b
+        //portal side b
         Cube::new(Vector3::new(0.0, 1.0, -2.0), 1.0, obsidian.clone()),
         Cube::new(Vector3::new(0.0, 2.0, -2.0), 1.0, obsidian.clone()),
         Cube::new(Vector3::new(0.0, 3.0, -2.0), 1.0, obsidian.clone()),
-    ];
+        //portal bottom
+        Cube::new(Vector3::new(0.0, 0.0, 0.0), 1.0, obsidian.clone()),
+        Cube::new(Vector3::new(0.0, 0.0, -1.0), 1.0, obsidian.clone()),
+        
+        //right
+        //floor
+        Cube::new(Vector3::new(1.0, 0.0, 1.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(2.0, 0.0, 1.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(3.0, 0.0, 1.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(4.0, 0.0, 1.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(5.0, 0.0, 1.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(1.0, 0.0, -4.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(5.0, 0.0, -4.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(1.0, 0.0, 0.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(1.0, 0.0, -1.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(1.0, 0.0, -2.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(1.0, 0.0, -3.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(5.0, 0.0, 0.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(5.0, 0.0, -1.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(5.0, 0.0, -2.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(5.0, 0.0, -3.0), 1.0, dirt.clone()),
+        Cube::new(Vector3::new(2.0, 0.0, 0.0), 1.0, grass.clone()), //grass
+        Cube::new(Vector3::new(3.0, 0.0, 0.0), 1.0, grass.clone()), //grass
+        Cube::new(Vector3::new(4.0, 0.0, 0.0), 1.0, grass.clone()), //grass
+        Cube::new(Vector3::new(2.0, 0.0, -1.0), 1.0, grass.clone()), //grass
+        Cube::new(Vector3::new(3.0, 0.0, -1.0), 1.0, grass.clone()), //grass
+        Cube::new(Vector3::new(4.0, 0.0, -1.0), 1.0, grass.clone()), //grass
+        Cube::new(Vector3::new(3.0, 0.0, -2.0), 1.0, wood_planks.clone()), //wood_planks
+        Cube::new(Vector3::new(3.0, 0.0, -3.0), 1.0, wood_planks.clone()), //wood_planks
+        //house back
+        Cube::new(Vector3::new(2.0, 1.0, -4.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(2.0, 2.0, -4.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(3.0, 1.0, -4.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(3.0, 2.0, -4.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 1.0, -4.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 2.0, -4.0), 1.0, wood_planks.clone()),
+        //house front
+        Cube::new(Vector3::new(2.0, 1.0, -2.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(2.0, 2.0, -2.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 1.0, -2.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 2.0, -2.0), 1.0, wood_planks.clone()),
+        //house sides
+        Cube::new(Vector3::new(2.0, 1.0, -3.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(2.0, 2.0, -3.0), 1.0, glass.clone()), //glass
+        Cube::new(Vector3::new(4.0, 1.0, -3.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 2.0, -3.0), 1.0, glass.clone()), //glass
+        //house roof
+        Cube::new(Vector3::new(2.0, 3.0, -2.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(3.0, 3.0, -2.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 3.0, -2.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(2.0, 3.0, -3.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(3.0, 3.0, -3.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 3.0, -3.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(2.0, 3.0, -4.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(3.0, 3.0, -4.0), 1.0, wood_planks.clone()),
+        Cube::new(Vector3::new(4.0, 3.0, -4.0), 1.0, wood_planks.clone()),
+        //tree
+        Cube::new(Vector3::new(5.0, 1.0, 1.0), 1.0, oak.clone()),
+        Cube::new(Vector3::new(5.0, 2.0, 1.0), 1.0, oak.clone()),
+        Cube::new(Vector3::new(5.0, 3.0, 1.0), 1.0, oak.clone()),
+        Cube::new(Vector3::new(5.0, 4.0, 1.0), 1.0, leaves.clone()),
+        Cube::new(Vector3::new(5.0, 5.0, 1.0), 1.0, leaves.clone()),
+        Cube::new(Vector3::new(6.0, 4.0, 1.0), 1.0, leaves.clone()),//right
+        Cube::new(Vector3::new(4.0, 4.0, 1.0), 1.0, leaves.clone()), //left
+        Cube::new(Vector3::new(5.0, 4.0, 2.0), 1.0, leaves.clone()), //front
+        Cube::new(Vector3::new(5.0, 4.0, -1.0), 1.0, leaves.clone()), //back
+        ];
     
     let mut camera = Camera::new(
         Vector3::new(0.0, 5.0, 8.0), //Posicion de la camara
