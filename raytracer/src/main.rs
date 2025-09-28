@@ -49,9 +49,11 @@ fn cast_shadow(
 ) -> f32 {
     let light_direction = (light.position - intersect.point).normalized();
     let shadow_ray_origin = intersect.point + intersect.normal * 0.001; // Bias para evitar auto-intersección
+    let light_distance = (light.position - shadow_ray_origin).length();
+    
     for object in objects {
         let shadow_intersect = object.ray_intersect(&shadow_ray_origin, &light_direction);
-        if shadow_intersect.is_intersecting && shadow_intersect.distance < (light.position - shadow_ray_origin).length() {
+        if shadow_intersect.is_intersecting && shadow_intersect.distance < light_distance {
             return 0.7;
         }
     }
@@ -76,7 +78,7 @@ pub fn cast_ray(
     depth: u32,
     texture_manager: &TextureManager,
 ) -> Vector3 {
-    if depth > 1 { // Originalmente era 3, reducido para mejor rendimiento
+    if depth > 1 { // Limitar profundidad a 1 para rendimiento
         return procedural_sky(*ray_direction);
     }
     
@@ -141,8 +143,8 @@ pub fn cast_ray(
     let specular_intensity = view_direction.dot(reflection_direction).max(0.0).powf(intersect.material.specular) * light_intensity;
     let specular = light.color * specular_intensity;
     
-    // Reflejo
-    let mut reflection_color = Vector3::zero(); // Cambiado para rendimiento
+    // Reflejo (solo para materiales que lo requieran)
+    let mut reflection_color = Vector3::zero();
     let reflectivity = intersect.material.reflectivity;
     if reflectivity > 0.0 {
         let reflect_direction = reflect(ray_direction, &normal);
@@ -150,9 +152,9 @@ pub fn cast_ray(
         reflection_color = cast_ray(&reflect_origin, &reflect_direction, objects, light, depth + 1, texture_manager);
     }
     
-    // Transparencia
+    // Transparencia (solo para materiales que lo requieran)
     let transparency = intersect.material.transparency;
-    let mut refraction_color = Vector3::zero(); // Cambiado para rendimiento
+    let mut refraction_color = Vector3::zero();
     if transparency > 0.0 {
         let refract_direction = refract(ray_direction, &normal, intersect.material.refractive_index);
         let refract_origin = offset_origin(&intersect, &refract_direction);
@@ -178,6 +180,9 @@ pub fn render(
     let fov = PI / 3.0;
     let perspective_scale = (fov * 0.5).tan();
     
+    // Pre-calcular vectores de la cámara para evitar cálculos repetidos
+    let camera_eye = camera.eye;
+        
     // Genera un iterador paralelo para las filas de píxeles (y). flat_map crea un nuevo iterador paralelo para cada píxel (x, y) en la pantalla.
     (0..height)
         .into_par_iter()
@@ -191,7 +196,7 @@ pub fn render(
             let ray_direction = Vector3::new(screen_x, screen_y, -1.0).normalized();
             let rotated_direction = camera.basis_change(&ray_direction);
             let pixel_color_vec = cast_ray(
-                &camera.eye,
+                &camera_eye,
                 &rotated_direction,
                 objects,
                 light,
@@ -228,6 +233,7 @@ fn main() {
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/leaves.png");
     texture_manager.load_texture(&mut window, &raylib_thread, "assets/dirt.png");
     
+    // Materiales con refracción (glass y water)
     let glass = Material {
         diffuse: Vector3::new(1.0, 1.0, 1.0), albedo: [0.0,5.0], specular: 125.0,
         reflectivity: 0.1, transparency: 0.9, refractive_index: 1.5,
@@ -240,17 +246,17 @@ fn main() {
     };
     let grass = Material {
         diffuse: Vector3::new(0.2, 0.6, 0.2), albedo: [0.7, 0.3], specular: 2.0,
-        reflectivity: 0.05, transparency: 0.0, refractive_index: 1.0,
+        reflectivity: 0.0, transparency: 0.0, refractive_index: 1.0,
         texture: Some("assets/grass.png".to_string()), normal_map_id: None,
     };
     let leaves = Material {
         diffuse: Vector3::new(0.1, 0.5, 0.1), albedo: [0.6, 0.4], specular: 3.0,
-        reflectivity: 0.02, transparency: 0.3, refractive_index: 1.2,
+        reflectivity: 0.0, transparency: 0.0, refractive_index: 1.2,
         texture: Some("assets/leaves.png".to_string()), normal_map_id: None,
     };
     let magma = Material {
         diffuse: Vector3::new(1.0, 0.3, 0.0), albedo: [0.9, 0.1], specular: 50.0,
-        reflectivity: 0.2, transparency: 0.0, refractive_index: 1.0,
+        reflectivity: 0.0, transparency: 0.0, refractive_index: 1.0,
         texture: Some("assets/magma.png".to_string()), normal_map_id: None,
     };
     let oak = Material {
@@ -265,12 +271,12 @@ fn main() {
     };
     let stone = Material {
         diffuse: Vector3::new(0.5, 0.5, 0.5), albedo: [0.7, 0.3], specular: 8.0,
-        reflectivity: 0.01, transparency: 0.0, refractive_index: 0.5,
+        reflectivity: 0.0, transparency: 0.0, refractive_index: 0.5,
         texture: Some("assets/stone.png".to_string()), normal_map_id: None,
     };
     let diamond_ore = Material {
         diffuse: Vector3::new(0.4, 0.4, 0.4), albedo: [0.6, 0.4], specular: 20.0,
-        reflectivity: 0.1, transparency: 0.0, refractive_index: 0.5,
+        reflectivity: 0.01, transparency: 0.0, refractive_index: 0.5,
         texture: Some("assets/diamond_ore.png".to_string()), normal_map_id: None,
     };
     let obsidian = Material {
@@ -417,7 +423,7 @@ fn main() {
         ];
     
     let mut camera = Camera::new(
-        Vector3::new(0.0, 5.0, 8.0), //Posicion de la camara
+        Vector3::new(0.0, 8.0, 10.0), //Posicion de la camara
         Vector3::new(0.0, 0.0, 0.0), //Donde mira la camara
         Vector3::new(0.0, 1.0, 0.0), //Donde esta arriba
     );
@@ -427,7 +433,7 @@ fn main() {
     let light = Light::new(
         Vector3::new(0.5, 5.0, 5.0), //Posicion de la luz
         Vector3::new(1.0, 1.0, 1.0), //Color de la luz
-        1.5, //Intensidad de la luz
+        1.2, //Intensidad de la luz
     );
 
     //Creamos la textura una sola vez, fuera del bucle principal.
