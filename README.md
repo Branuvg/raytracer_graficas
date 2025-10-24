@@ -102,7 +102,7 @@ Modifica la estructura `Material` en `material.rs` para añadir nuevas propiedad
 Edita la configuración de la escena en `main.rs` para añadir, eliminar o modificar objetos
 
 ## Video Demostrativo
-[![Ver en YouTube](https://img.youtube.com/JT5SvBCQtR4/maxresdefault.jpg)](https://youtu.be/JT5SvBCQtR4)
+[![Ver en YouTube](https://img.youtube.com/vi/JT5SvBCQtR4/maxresdefault.jpg)](https://youtu.be/JT5SvBCQtR4)
 
 Haz clic en la imagen para ver el video demostrativo del raytracer en acción.
 
