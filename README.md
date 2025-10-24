@@ -2,6 +2,8 @@
 
 Un raytracer 3D en tiempo real implementado en Rust usando raylib-rs. Este proyecto incluye renderizado basado en física con soporte para varios materiales, iluminación, reflejos, refracciones y mapeado de texturas.
 
+![Gameplay Screenshot](scene_photo.png)
+
 ## Características
 
 - Renderizado en tiempo real con configuración personalizable
@@ -100,8 +102,7 @@ Modifica la estructura `Material` en `material.rs` para añadir nuevas propiedad
 Edita la configuración de la escena en `main.rs` para añadir, eliminar o modificar objetos
 
 ## Video Demostrativo
-
-
+[![Ver en YouTube](https://img.youtube.com/JT5SvBCQtR4/maxresdefault.jpg)](https://youtu.be/JT5SvBCQtR4)
 
 Haz clic en la imagen para ver el video demostrativo del raytracer en acción.
 

@@ -356,7 +356,7 @@ fn main() {
     objects.push(Cube::new(Vector3::new(6.0, 4.0, 1.0), 1.0, leaves.clone()));
     objects.push(Cube::new(Vector3::new(4.0, 4.0, 1.0), 1.0, leaves.clone()));
     objects.push(Cube::new(Vector3::new(5.0, 4.0, 2.0), 1.0, leaves.clone()));
-    objects.push(Cube::new(Vector3::new(5.0, 4.0, -1.0), 1.0, leaves.clone()));
+    objects.push(Cube::new(Vector3::new(5.0, 4.0, 0.0), 1.0, leaves.clone()));
 
     // Pre-filtrar los cubos que emiten luz
     let emissive_cubes: Vec<&Cube> = objects.iter().filter(|c| c.material.emission.dot(c.material.emission) > 0.0).collect();
