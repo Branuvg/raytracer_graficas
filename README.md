@@ -16,6 +16,7 @@ Un raytracer 3D en tiempo real implementado en Rust usando raylib-rs. Este proye
 - Iluminación dinámica con sombras
 - Skybox con mapeado de entorno
 - Controles de cámara para navegar por la escena
+- Se incluye el pdf de la planificación de esta escena especifica en el "Planificacion.pdf"
 
 ## Requisitos Previos
 
